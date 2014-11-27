@@ -1,1 +1,1 @@
-web: java -cp target/classes:target/dependency/* org.baseservices.heroku.Main
+web: java -cp target/classes:target/dependency/* org.rootservices.server.Main

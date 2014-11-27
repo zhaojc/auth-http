@@ -1,9 +1,7 @@
-package org.baseservices.heroku;
+package org.rootservices.server;
 
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.webapp.WebAppContext;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.mvc.mustache.MustacheMvcFeature;
 import org.glassfish.jersey.jetty.JettyHttpContainerFactory;
 
 import javax.ws.rs.core.UriBuilder;

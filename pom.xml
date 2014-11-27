@@ -10,9 +10,14 @@
     <name>auth-http</name>
 
     <properties>
+        <java.version>1.8</java.version>
+        <org.springframework.version>4.1.0.RELEASE</org.springframework.version>
         <jersey.version>2.8</jersey.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jetty.version>9.2.3.v20140905</jetty.version>
+        <auth.version>1.0-SNAPSHOT</auth.version>
+        <org.postgres.version>9.3-1102-jdbc4</org.postgres.version>
+        <cucumber.version>1.2.0</cucumber.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencyManagement>
@@ -29,8 +34,38 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${org.springframework.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>${org.springframework.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.ext</groupId>
+            <artifactId>jersey-spring3</artifactId>
+            <version>${jersey.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -49,18 +84,13 @@
             <artifactId>jersey-mvc-mustache</artifactId>
         </dependency>
 
-        <!-- uncomment this to get JSON support
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-moxy</artifactId>
-        </dependency> -->
-
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
             <version>${jetty.version}</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
@@ -69,11 +99,47 @@
         </dependency>
 
         <dependency>
+            <groupId>org.rootservices</groupId>
+            <artifactId>auth</artifactId>
+            <version>${auth.version}</version>
+        </dependency>
+
+        <!-- Database Drivers -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${org.postgres.version}</version>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
             <groupId>org.glassfish.jersey.test-framework.providers</groupId>
             <artifactId>jersey-test-framework-provider-bundle</artifactId>
             <type>pom</type>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.easytesting</groupId>
+            <artifactId>fest-assert-core</artifactId>
+            <version>2.0M10</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${org.springframework.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.7.2</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -82,11 +148,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.5.1</version>
+                <version>3.1</version>
                 <inherited>true</inherited>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -110,12 +176,18 @@
                 <artifactId>jetty-maven-plugin</artifactId>
                 <version>${jetty.version}</version>
                 <configuration>
-                    <contextPath>/</contextPath>
                     <webApp>
                         <contextPath>/</contextPath>
                         <webInfIncludeJarPattern>.*/.*jersey-[^/]\.jar$</webInfIncludeJarPattern>
                     </webApp>
                     <war>${project.build.directory}/${project.build.finalName}.war</war>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
         </plugins>
