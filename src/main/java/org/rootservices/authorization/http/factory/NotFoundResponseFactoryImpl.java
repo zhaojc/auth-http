@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
  * Created by tommackenzie on 11/26/14.
  */
 @Component
-public class NotFoundResponseFactoryImpl implements NotFoundResponseFactory<NotFoundResponse, NotFoundException> {
+public class NotFoundResponseFactoryImpl implements NotFoundResponseFactory<NotFoundResponse> {
 
     @Override
     public NotFoundResponse createNFR(NotFoundException exception) {

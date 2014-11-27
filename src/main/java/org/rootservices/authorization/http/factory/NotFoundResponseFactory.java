@@ -6,6 +6,6 @@ import org.rootservices.authorization.http.response.NotFoundResponse;
 /**
  * Created by tommackenzie on 11/26/14.
  */
-public interface NotFoundResponseFactory<NFR, NFE extends NotFoundException> {
-    public NFR createNFR(NFE exception);
+public interface NotFoundResponseFactory<NFR> {
+    public NFR createNFR(NotFoundException exception);
 }
