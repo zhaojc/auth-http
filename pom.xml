@@ -111,6 +111,12 @@
             <version>${org.postgres.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-maven-plugin</artifactId>
+            <version>3.0</version>
+        </dependency>
+
         <!-- test -->
         <dependency>
             <groupId>org.glassfish.jersey.test-framework.providers</groupId>
@@ -189,6 +195,18 @@
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>3.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${org.postgres.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
