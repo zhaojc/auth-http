@@ -14,6 +14,7 @@ import org.rootservices.authorization.codegrant.request.AuthRequest;
 import org.rootservices.authorization.codegrant.request.ValidateAuthRequest;
 import org.rootservices.authorization.codegrant.builder.AuthRequestBuilderImpl;
 import org.rootservices.authorization.http.builder.OkResponseBuilder;
+import org.rootservices.authorization.http.context.RedirectOrNotFound;
 import org.rootservices.authorization.http.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -48,6 +49,9 @@ public abstract class AbstractAuthorization<OR> {
     private ValidateAuthRequest validateAuthRequest;
 
     @Autowired
+    private RedirectOrNotFound redirectOrNotFound;
+
+    @Autowired
     private OkResponseBuilder okResponseBuilder;
 
     public AbstractAuthorization() {}
@@ -57,14 +61,16 @@ public abstract class AbstractAuthorization<OR> {
     public Response authorize(@QueryParam("client_id") List<String> clientIds,
                               @QueryParam("response_type") List<String> responseTypes) throws NotFoundException {
 
+        AuthRequest authRequest;
         try {
             validateParams.run(clientIds, responseTypes);
-            AuthRequest authRequest = authRequestBuilder.build(clientIds.get(0), responseTypes.get(0));
+            authRequest = authRequestBuilder.build(clientIds.get(0), responseTypes.get(0));
             validateAuthRequest.run(authRequest);
         } catch (InformResourceOwnerException e) {
             throw new NotFoundException("Entity not found", e);
         } catch (InformClientException e) {
-            e.printStackTrace();
+            String clientId = clientIds.get(0);
+            return redirectOrNotFound.run(clientId);
         }
 
         String templateName = getTemplateName();
