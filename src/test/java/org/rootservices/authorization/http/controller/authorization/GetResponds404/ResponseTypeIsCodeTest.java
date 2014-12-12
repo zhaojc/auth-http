@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http.controller.authorization;
+package org.rootservices.authorization.http.controller.authorization.GetResponds404;
 
 
 import org.glassfish.jersey.test.JerseyTest;
@@ -26,35 +26,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tommackenzie on 11/27/14.
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(value={"classpath:applicationContext.xml"})
-public class GetResponds404Test extends JerseyTest {
-
-    private static int NOT_FOUND = Response.Status.NOT_FOUND.getStatusCode();
-    private static String NOT_FOUND_MESSAGE = "Not Found";
-
-    @Autowired
-    private ClientRepository clientRepository;
-
-    @Override
-    protected Application configure() {
-        return new org.rootservices.server.Application();
-    }
-
-    public Client insert() throws URISyntaxException {
-        UUID uuid = UUID.randomUUID();
-        ResponseType rt = ResponseType.CODE;
-        URI redirectURI = new URI("https://rootservices.org");
-        Client client = new Client(uuid, rt, redirectURI);
-
-        clientRepository.insert(client);
-        return client;
-    }
-
-    private String getMessage(String html) {
-        Document doc = Jsoup.parse(html);
-        return doc.select("div#message").first().text();
-    }
+public class ResponseTypeIsCodeTest extends ResponseTypeBase {
 
     @Test
     public void clientNotFound() throws URISyntaxException, IOException{
