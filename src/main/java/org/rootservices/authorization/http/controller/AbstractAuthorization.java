@@ -9,16 +9,19 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.mvc.Viewable;
 import org.rootservices.authorization.codegrant.exception.client.InformClientException;
 import org.rootservices.authorization.codegrant.exception.resourceowner.InformResourceOwnerException;
-import org.rootservices.authorization.codegrant.params.ValidateParams;
 import org.rootservices.authorization.codegrant.request.AuthRequest;
 import org.rootservices.authorization.codegrant.request.ValidateAuthRequest;
-import org.rootservices.authorization.codegrant.builder.AuthRequestBuilderImpl;
 import org.rootservices.authorization.http.builder.OkResponseBuilder;
 import org.rootservices.authorization.http.context.RedirectOrNotFound;
 import org.rootservices.authorization.http.exception.NotFoundException;
+import org.rootservices.authorization.http.translator.StringsToResponseType;
+import org.rootservices.authorization.http.translator.StringsToUUID;
+import org.rootservices.authorization.http.translator.ValidationError;
+import org.rootservices.authorization.persistence.entity.ResponseType;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by tommackenzie on 11/27/14.
@@ -40,10 +43,10 @@ import java.util.List;
 public abstract class AbstractAuthorization<OR> {
 
     @Autowired
-    private ValidateParams validateParams;
+    private StringsToUUID stringsToUUID;
 
     @Autowired
-    private AuthRequestBuilderImpl authRequestBuilder;
+    private StringsToResponseType stringsToResponseType;
 
     @Autowired
     private ValidateAuthRequest validateAuthRequest;
@@ -61,16 +64,31 @@ public abstract class AbstractAuthorization<OR> {
     public Response authorize(@QueryParam("client_id") List<String> clientIds,
                               @QueryParam("response_type") List<String> responseTypes) throws NotFoundException {
 
-        AuthRequest authRequest;
+        UUID clientId;
+        ResponseType responseType;
+
         try {
-            validateParams.run(clientIds, responseTypes);
-            authRequest = authRequestBuilder.build(clientIds.get(0), responseTypes.get(0));
+            clientId = stringsToUUID.run(clientIds);
+        } catch (ValidationError e) {
+            throw new NotFoundException("Entity not found", e);
+        }
+
+        try {
+            responseType = stringsToResponseType.run(responseTypes);
+        } catch (ValidationError e) {
+            return redirectOrNotFound.run(clientId);
+        }
+
+        AuthRequest authRequest = new AuthRequest();
+        authRequest.setClientId(clientId);
+        authRequest.setResponseType(responseType);
+
+        try {
             validateAuthRequest.run(authRequest);
         } catch (InformResourceOwnerException e) {
             throw new NotFoundException("Entity not found", e);
         } catch (InformClientException e) {
-            String clientId = clientIds.get(0);
-            return redirectOrNotFound.run(clientId);
+            e.printStackTrace();
         }
 
         String templateName = getTemplateName();

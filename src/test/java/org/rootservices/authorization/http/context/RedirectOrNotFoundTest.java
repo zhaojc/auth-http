@@ -38,11 +38,11 @@ public class RedirectOrNotFoundTest {
 
     @Test
     public void run() throws URISyntaxException, RecordNotFoundException, NotFoundException {
-        UUID uuid = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
         URI redirectURI = new URI("https://rootservices.org");
-        when(mockGetClientRedirectURI.run(uuid)).thenReturn(redirectURI);
+        when(mockGetClientRedirectURI.run(clientId)).thenReturn(redirectURI);
 
-        Response actual = subject.run(uuid.toString());
+        Response actual = subject.run(clientId);
         assertThat(actual.getStatus()).isEqualTo(MOVED_PERMANENTLY);
     }
 }

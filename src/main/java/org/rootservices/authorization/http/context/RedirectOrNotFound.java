@@ -20,12 +20,11 @@ public class RedirectOrNotFound {
     @Autowired
     private GetClientRedirectURI getClientRedirectURI;
 
-    public Response run(String uuid) throws NotFoundException {
-        UUID clientUUID = UUID.fromString(uuid);
+    public Response run(UUID clientId) throws NotFoundException {
         URI redirectURI;
 
         try {
-            redirectURI = getClientRedirectURI.run(clientUUID);
+            redirectURI = getClientRedirectURI.run(clientId);
         } catch (RecordNotFoundException rnfe) {
             throw new NotFoundException("Entity not found", rnfe);
         }
