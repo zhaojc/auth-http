@@ -7,8 +7,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.server.mvc.Viewable;
-import org.rootservices.authorization.codegrant.exception.client.InformClientException;
-import org.rootservices.authorization.codegrant.exception.resourceowner.InformResourceOwnerException;
+import org.rootservices.authorization.codegrant.exception.client.ResponseTypeIsNotCodeException;
+import org.rootservices.authorization.codegrant.exception.client.UnAuthorizedResponseTypeException;
+import org.rootservices.authorization.codegrant.exception.resourceowner.ClientNotFoundException;
 import org.rootservices.authorization.codegrant.request.AuthRequest;
 import org.rootservices.authorization.codegrant.request.ValidateAuthRequest;
 import org.rootservices.authorization.http.builder.OkResponseBuilder;
@@ -20,6 +21,8 @@ import org.rootservices.authorization.http.translator.ValidationError;
 import org.rootservices.authorization.persistence.entity.ResponseType;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,7 +65,7 @@ public abstract class AbstractAuthorization<OR> {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Response authorize(@QueryParam("client_id") List<String> clientIds,
-                              @QueryParam("response_type") List<String> responseTypes) throws NotFoundException {
+                              @QueryParam("response_type") List<String> responseTypes) throws NotFoundException, URISyntaxException {
 
         UUID clientId;
         ResponseType responseType;
@@ -85,9 +88,19 @@ public abstract class AbstractAuthorization<OR> {
 
         try {
             validateAuthRequest.run(authRequest);
-        } catch (InformResourceOwnerException e) {
+        } catch (ClientNotFoundException e) {
             throw new NotFoundException("Entity not found", e);
-        } catch (InformClientException e) {
+        } catch (UnAuthorizedResponseTypeException e) {
+            String formData = "?error=unauthorized_client";
+            URI location = new URI(e.getRedirectURI().toString() + formData);
+            Response response = Response.status(Response.Status.FOUND.getStatusCode())
+                    .location(location)
+                    .type(MediaType.APPLICATION_FORM_URLENCODED)
+                    .build();
+
+            return response;
+
+        } catch (ResponseTypeIsNotCodeException e) {
             e.printStackTrace();
         }
 
