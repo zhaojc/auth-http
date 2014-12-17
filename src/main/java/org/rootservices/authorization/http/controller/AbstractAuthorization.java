@@ -1,11 +1,5 @@
 package org.rootservices.authorization.http.controller;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.glassfish.jersey.server.mvc.Viewable;
 import org.rootservices.authorization.codegrant.exception.client.ResponseTypeIsNotCodeException;
 import org.rootservices.authorization.codegrant.exception.client.UnAuthorizedResponseTypeException;
@@ -13,7 +7,7 @@ import org.rootservices.authorization.codegrant.exception.resourceowner.ClientNo
 import org.rootservices.authorization.codegrant.request.AuthRequest;
 import org.rootservices.authorization.codegrant.request.ValidateAuthRequest;
 import org.rootservices.authorization.http.builder.OkResponseBuilder;
-import org.rootservices.authorization.http.context.RedirectOrNotFound;
+import org.rootservices.authorization.http.context.InvalidRequestOrNotFound;
 import org.rootservices.authorization.http.exception.NotFoundException;
 import org.rootservices.authorization.http.translator.StringsToResponseType;
 import org.rootservices.authorization.http.translator.StringsToUUID;
@@ -21,6 +15,11 @@ import org.rootservices.authorization.http.translator.ValidationError;
 import org.rootservices.authorization.persistence.entity.ResponseType;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -55,7 +54,7 @@ public abstract class AbstractAuthorization<OR> {
     private ValidateAuthRequest validateAuthRequest;
 
     @Autowired
-    private RedirectOrNotFound redirectOrNotFound;
+    private InvalidRequestOrNotFound invalidRequestOrNotFound;
 
     @Autowired
     private OkResponseBuilder okResponseBuilder;
@@ -79,7 +78,7 @@ public abstract class AbstractAuthorization<OR> {
         try {
             responseType = stringsToResponseType.run(responseTypes);
         } catch (ValidationError e) {
-            return redirectOrNotFound.run(clientId);
+            return invalidRequestOrNotFound.run(clientId);
         }
 
         AuthRequest authRequest = new AuthRequest();
@@ -91,7 +90,7 @@ public abstract class AbstractAuthorization<OR> {
         } catch (ClientNotFoundException e) {
             throw new NotFoundException("Entity not found", e);
         } catch (UnAuthorizedResponseTypeException e) {
-            String formData = "?error=unauthorized_client";
+            String formData = "#error=unauthorized_client";
             URI location = new URI(e.getRedirectURI().toString() + formData);
             Response response = Response.status(Response.Status.FOUND.getStatusCode())
                     .location(location)

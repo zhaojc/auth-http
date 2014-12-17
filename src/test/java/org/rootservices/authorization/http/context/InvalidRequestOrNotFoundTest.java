@@ -21,18 +21,18 @@ import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RedirectOrNotFoundTest {
+public class InvalidRequestOrNotFoundTest {
 
-    private static int MOVED_PERMANENTLY = Status.MOVED_PERMANENTLY.getStatusCode();
+    private static int FOUND = Status.FOUND.getStatusCode();
 
     @Mock
     private GetClientRedirectURI mockGetClientRedirectURI;
 
-    private RedirectOrNotFound subject;
+    private InvalidRequestOrNotFound subject;
 
     @Before
     public void setUp() {
-        subject = new RedirectOrNotFound();
+        subject = new InvalidRequestOrNotFound();
         ReflectionTestUtils.setField(subject, "getClientRedirectURI", mockGetClientRedirectURI);
     }
 
@@ -43,6 +43,6 @@ public class RedirectOrNotFoundTest {
         when(mockGetClientRedirectURI.run(clientId)).thenReturn(redirectURI);
 
         Response actual = subject.run(clientId);
-        assertThat(actual.getStatus()).isEqualTo(MOVED_PERMANENTLY);
+        assertThat(actual.getStatus()).isEqualTo(FOUND);
     }
 }

@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http.controller.authorization;
+package org.rootservices.authorization.http.controller.authorization.GetResponds302.ErrorResponse;
 
 import org.glassfish.jersey.test.JerseyTest;
 import org.junit.Test;
@@ -18,14 +18,13 @@ import java.net.URISyntaxException;
 import java.util.UUID;
 
 import static org.fest.assertions.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by tommackenzie on 12/13/14.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(value={"classpath:applicationContext.xml"})
-public class GetResponds302Test extends JerseyTest {
+public class UnauthorizedResponseTypeTest extends JerseyTest {
 
     private static int FOUND = Response.Status.FOUND.getStatusCode();
 
@@ -47,9 +46,9 @@ public class GetResponds302Test extends JerseyTest {
     }
 
     @Test
-    public void UnAuthorizedResponseType() throws URISyntaxException {
+    public void clientIsTokenRequestIsCode() throws URISyntaxException {
         Client client = insert(ResponseType.TOKEN);
-        URI expectedLocation = new URI(client.getRedirectURI() + "?error=unauthorized_client");
+        URI expectedLocation = new URI(client.getRedirectURI() + "#error=unauthorized_client");
 
         Response response = target()
                 .path("authorization")
@@ -62,4 +61,6 @@ public class GetResponds302Test extends JerseyTest {
         assertThat(response.getLocation()).isEqualTo(expectedLocation);
         assertThat(response.getMediaType()).isEqualTo(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
     }
+
+
 }
