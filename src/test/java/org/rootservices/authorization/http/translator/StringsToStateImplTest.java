@@ -1,6 +1,5 @@
 package org.rootservices.authorization.http.translator;
 
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,10 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.fest.assertions.api.Assertions.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class StringsToResponseTypeImplTest {
+public class StringsToStateImplTest {
 
     @Mock
     private IsNotNull mockIsNotNull;
@@ -25,11 +25,36 @@ public class StringsToResponseTypeImplTest {
     @Mock
     private HasOneItem mockHasOneItem;
 
-    private StringsToResponseType subject;
+    private StringsToStateImpl subject;
 
     @Before
     public void run() {
-        subject = new StringsToResponseTypeImpl(mockIsNotNull, mockHasOneItem);
+        subject = new StringsToStateImpl(mockIsNotNull, mockHasOneItem);
+    }
+
+    @Test
+    public void runIsOk() throws ValidationError {
+        String expected = "some-state";
+        List<String> items = new ArrayList<>();
+        String item = expected;
+        items.add(item);
+
+        when(mockIsNotNull.run(items)).thenReturn(true);
+        when(mockHasOneItem.run(items)).thenReturn(true);
+
+        String actual = subject.run(items);
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    public void runEmptyList() throws ValidationError {
+        List<String> items = new ArrayList<>();
+
+        when(mockIsNotNull.run(items)).thenReturn(true);
+        when(mockHasOneItem.run(items)).thenReturn(true);
+
+        String actual = subject.run(items);
+        assertThat(actual).isNull();
     }
 
     @Test(expected=ValidationError.class)
@@ -55,9 +80,9 @@ public class StringsToResponseTypeImplTest {
     }
 
     @Test(expected=ValidationError.class)
-    public void runIsNotResponseType() throws ValidationError {
+    public void runIsEmpty() throws ValidationError {
         List<String> items = new ArrayList<>();
-        String item = "items";
+        String item = "";
         items.add(item);
 
         when(mockIsNotNull.run(items)).thenReturn(true);
@@ -65,19 +90,4 @@ public class StringsToResponseTypeImplTest {
 
         subject.run(items);
     }
-
-    @Test
-    public void runIsResponseType() throws ValidationError {
-        List<String> items = new ArrayList<>();
-        ResponseType expected = ResponseType.CODE;
-        String item = expected.toString();
-        items.add(item);
-
-        when(mockIsNotNull.run(items)).thenReturn(true);
-        when(mockHasOneItem.run(items)).thenReturn(true);
-
-        ResponseType actual = subject.run(items);
-        assertThat(actual).isEqualTo(expected);
-    }
-
 }
