@@ -10,6 +10,7 @@ import org.rootservices.authorization.http.builder.OkResponseBuilder;
 import org.rootservices.authorization.http.context.InvalidRequestOrNotFound;
 import org.rootservices.authorization.http.exception.NotFoundException;
 import org.rootservices.authorization.http.translator.StringsToResponseType;
+import org.rootservices.authorization.http.translator.StringsToState;
 import org.rootservices.authorization.http.translator.StringsToUUID;
 import org.rootservices.authorization.http.translator.ValidationError;
 import org.rootservices.authorization.persistence.entity.ResponseType;
@@ -51,6 +52,9 @@ public abstract class AbstractAuthorization<OR> {
     private StringsToResponseType stringsToResponseType;
 
     @Autowired
+    private StringsToState stringsToState;
+
+    @Autowired
     private ValidateAuthRequest validateAuthRequest;
 
     @Autowired
@@ -64,10 +68,13 @@ public abstract class AbstractAuthorization<OR> {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Response authorize(@QueryParam("client_id") List<String> clientIds,
-                              @QueryParam("response_type") List<String> responseTypes) throws NotFoundException, URISyntaxException {
+                              @QueryParam("response_type") List<String> responseTypes,
+                              @QueryParam("state") List<String> states) throws NotFoundException, URISyntaxException {
 
         UUID clientId;
         ResponseType responseType;
+        String state;
+
 
         try {
             clientId = stringsToUUID.run(clientIds);
@@ -78,6 +85,12 @@ public abstract class AbstractAuthorization<OR> {
         try {
             responseType = stringsToResponseType.run(responseTypes);
         } catch (ValidationError e) {
+            return invalidRequestOrNotFound.run(clientId);
+        }
+
+        try {
+            state = stringsToState.run(states);
+        } catch (ValidationError validationError) {
             return invalidRequestOrNotFound.run(clientId);
         }
 

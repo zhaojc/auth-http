@@ -20,11 +20,12 @@ import java.util.UUID;
 import static org.fest.assertions.api.Assertions.assertThat;
 
 /**
- * Created by tommackenzie on 12/17/14.
+ * Created by tommackenzie on 12/27/14.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(value={"classpath:applicationContext.xml"})
-public class InvalidRequestTest extends JerseyTest {
+public class InvalidStateTest extends JerseyTest {
+
     private static int FOUND = Response.Status.FOUND.getStatusCode();
 
     @Autowired
@@ -45,57 +46,7 @@ public class InvalidRequestTest extends JerseyTest {
     }
 
     @Test
-    public void responseTypeIsMissing() throws URISyntaxException {
-        Client client = insert(ResponseType.CODE);
-        URI expectedLocation = new URI(client.getRedirectURI() + "#error=invalid_request");
-
-        Response response = target()
-                .path("authorization")
-                .queryParam("client_id", client.getUuid().toString())
-                .request()
-                .get();
-
-        assertThat(response.getStatus()).isEqualTo(FOUND);
-        assertThat(response.getLocation()).isEqualTo(expectedLocation);
-        assertThat(response.getMediaType()).isEqualTo(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
-    }
-
-    @Test
-    public void responseTypeIsEmpty() throws URISyntaxException {
-        Client client = insert(ResponseType.CODE);
-        URI expectedLocation = new URI(client.getRedirectURI() + "#error=invalid_request");
-
-        Response response = target()
-                .path("authorization")
-                .queryParam("client_id", client.getUuid().toString())
-                .queryParam("response_type", "")
-                .request()
-                .get();
-
-        assertThat(response.getStatus()).isEqualTo(FOUND);
-        assertThat(response.getLocation()).isEqualTo(expectedLocation);
-        assertThat(response.getMediaType()).isEqualTo(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
-    }
-
-    @Test
-    public void responseTypeIsUnknown() throws URISyntaxException {
-        Client client = insert(ResponseType.CODE);
-        URI expectedLocation = new URI(client.getRedirectURI() + "#error=invalid_request");
-
-        Response response = target()
-                .path("authorization")
-                .queryParam("client_id", client.getUuid().toString())
-                .queryParam("response_type", "foo")
-                .request()
-                .get();
-
-        assertThat(response.getStatus()).isEqualTo(FOUND);
-        assertThat(response.getLocation()).isEqualTo(expectedLocation);
-        assertThat(response.getMediaType()).isEqualTo(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
-    }
-
-    @Test
-    public void responseTypeDuplicated() throws URISyntaxException {
+    public void stateIsEmpty() throws URISyntaxException {
         Client client = insert(ResponseType.CODE);
         URI expectedLocation = new URI(client.getRedirectURI() + "#error=invalid_request");
 
@@ -103,7 +54,26 @@ public class InvalidRequestTest extends JerseyTest {
                 .path("authorization")
                 .queryParam("client_id", client.getUuid().toString())
                 .queryParam("response_type", ResponseType.CODE.toString())
+                .queryParam("state", "")
+                .request()
+                .get();
+
+        assertThat(response.getStatus()).isEqualTo(FOUND);
+        assertThat(response.getLocation()).isEqualTo(expectedLocation);
+        assertThat(response.getMediaType()).isEqualTo(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+    }
+
+    @Test
+    public void duplicateState() throws URISyntaxException {
+        Client client = insert(ResponseType.CODE);
+        URI expectedLocation = new URI(client.getRedirectURI() + "#error=invalid_request");
+
+        Response response = target()
+                .path("authorization")
+                .queryParam("client_id", client.getUuid().toString())
                 .queryParam("response_type", ResponseType.CODE.toString())
+                .queryParam("state", "some-state1")
+                .queryParam("state", "some-state2")
                 .request()
                 .get();
 
