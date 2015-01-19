@@ -4,7 +4,6 @@ import org.rootservices.authorization.http.translator.exception.EmptyValueError;
 import org.rootservices.authorization.http.translator.exception.InvalidValueError;
 import org.rootservices.authorization.http.translator.exception.ValidationError;
 import org.rootservices.authorization.http.validator.HasOneItem;
-import org.rootservices.authorization.persistence.entity.ResponseType;
 import org.rootservices.authorization.persistence.entity.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
