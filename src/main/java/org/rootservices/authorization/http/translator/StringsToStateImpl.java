@@ -1,6 +1,6 @@
 package org.rootservices.authorization.http.translator;
 
-import org.hamcrest.core.IsNot;
+import org.rootservices.authorization.http.translator.exception.ValidationError;
 import org.rootservices.authorization.http.validator.HasOneItem;
 import org.rootservices.authorization.http.validator.IsNotNull;
 import org.springframework.beans.factory.annotation.Autowired;

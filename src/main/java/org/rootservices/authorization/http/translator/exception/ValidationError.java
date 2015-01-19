@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http.translator;
+package org.rootservices.authorization.http.translator.exception;
 
 /**
  * Created by tommackenzie on 12/13/14.

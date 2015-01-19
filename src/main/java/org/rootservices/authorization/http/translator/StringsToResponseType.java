@@ -1,5 +1,6 @@
 package org.rootservices.authorization.http.translator;
 
+import org.rootservices.authorization.http.translator.exception.ValidationError;
 import org.rootservices.authorization.persistence.entity.ResponseType;
 
 import java.util.List;

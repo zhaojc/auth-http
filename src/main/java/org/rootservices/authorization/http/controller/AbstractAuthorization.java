@@ -7,13 +7,14 @@ import org.rootservices.authorization.codegrant.exception.resourceowner.ClientNo
 import org.rootservices.authorization.codegrant.request.AuthRequest;
 import org.rootservices.authorization.codegrant.request.ValidateAuthRequest;
 import org.rootservices.authorization.http.builder.OkResponseBuilder;
-import org.rootservices.authorization.http.context.InvalidRequestOrNotFound;
+import org.rootservices.authorization.http.context.ErrorResponseOrNotFound;
 import org.rootservices.authorization.http.exception.NotFoundException;
-import org.rootservices.authorization.http.translator.StringsToResponseType;
-import org.rootservices.authorization.http.translator.StringsToState;
-import org.rootservices.authorization.http.translator.StringsToUUID;
-import org.rootservices.authorization.http.translator.ValidationError;
+import org.rootservices.authorization.http.translator.*;
+import org.rootservices.authorization.http.translator.exception.EmptyValueError;
+import org.rootservices.authorization.http.translator.exception.InvalidValueError;
+import org.rootservices.authorization.http.translator.exception.ValidationError;
 import org.rootservices.authorization.persistence.entity.ResponseType;
+import org.rootservices.authorization.persistence.entity.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.GET;
@@ -55,10 +56,13 @@ public abstract class AbstractAuthorization<OR> {
     private StringsToState stringsToState;
 
     @Autowired
+    private StringsToScopes stringsToScopes;
+
+    @Autowired
     private ValidateAuthRequest validateAuthRequest;
 
     @Autowired
-    private InvalidRequestOrNotFound invalidRequestOrNotFound;
+    private ErrorResponseOrNotFound errorResponseOrNotFound;
 
     @Autowired
     private OkResponseBuilder okResponseBuilder;
@@ -69,12 +73,13 @@ public abstract class AbstractAuthorization<OR> {
     @Produces(MediaType.TEXT_HTML)
     public Response authorize(@QueryParam("client_id") List<String> clientIds,
                               @QueryParam("response_type") List<String> responseTypes,
-                              @QueryParam("state") List<String> states) throws NotFoundException, URISyntaxException {
+                              @QueryParam("state") List<String> states,
+                              @QueryParam("scope") List<String> scopes) throws NotFoundException, URISyntaxException {
 
         UUID clientId;
         ResponseType responseType;
         String state;
-
+        List<Scope> cleanedScopes;
 
         try {
             clientId = stringsToUUID.run(clientIds);
@@ -85,13 +90,21 @@ public abstract class AbstractAuthorization<OR> {
         try {
             responseType = stringsToResponseType.run(responseTypes);
         } catch (ValidationError e) {
-            return invalidRequestOrNotFound.run(clientId);
+            return errorResponseOrNotFound.run(clientId);
         }
 
         try {
             state = stringsToState.run(states);
         } catch (ValidationError validationError) {
-            return invalidRequestOrNotFound.run(clientId);
+            return errorResponseOrNotFound.run(clientId);
+        }
+
+        try {
+            cleanedScopes = stringsToScopes.run(scopes);
+        } catch(EmptyValueError|InvalidValueError e) {
+            return errorResponseOrNotFound.run(clientId, "invalid_scope");
+        } catch (ValidationError e) {
+            return errorResponseOrNotFound.run(clientId);
         }
 
         AuthRequest authRequest = new AuthRequest();

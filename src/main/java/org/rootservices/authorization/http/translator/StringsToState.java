@@ -1,5 +1,7 @@
 package org.rootservices.authorization.http.translator;
 
+import org.rootservices.authorization.http.translator.exception.ValidationError;
+
 import java.util.List;
 
 /**
