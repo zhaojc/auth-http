@@ -1,5 +1,6 @@
 package org.rootservices.authorization.http.translator;
 
+import org.rootservices.authorization.http.translator.exception.ValidationError;
 import org.rootservices.authorization.http.validator.HasOneItem;
 import org.rootservices.authorization.http.validator.IsNotNull;
 import org.rootservices.authorization.persistence.entity.ResponseType;

@@ -17,12 +17,17 @@ import java.util.UUID;
  * Created by tommackenzie on 12/10/14.
  */
 @Component
-public class InvalidRequestOrNotFound {
+public class ErrorResponseOrNotFound {
 
     @Autowired
     private GetClientRedirectURI getClientRedirectURI;
+    private String error = "invalid_request";
 
     public Response run(UUID clientId) throws NotFoundException, URISyntaxException {
+        return run(clientId, error);
+    }
+
+    public Response run(UUID clientId, String error) throws NotFoundException, URISyntaxException {
         URI redirectURI;
 
         try {
@@ -31,7 +36,7 @@ public class InvalidRequestOrNotFound {
             throw new NotFoundException("Entity not found", rnfe);
         }
 
-        String formData = "#error=invalid_request";
+        String formData = "#error="+error;
         URI location = new URI(redirectURI.toString() + formData);
         return Response.status(Status.FOUND.getStatusCode())
                 .location(location)

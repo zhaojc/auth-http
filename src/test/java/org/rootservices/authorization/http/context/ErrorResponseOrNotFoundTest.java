@@ -21,18 +21,18 @@ import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InvalidRequestOrNotFoundTest {
+public class ErrorResponseOrNotFoundTest {
 
     private static int FOUND = Status.FOUND.getStatusCode();
 
     @Mock
     private GetClientRedirectURI mockGetClientRedirectURI;
 
-    private InvalidRequestOrNotFound subject;
+    private ErrorResponseOrNotFound subject;
 
     @Before
     public void setUp() {
-        subject = new InvalidRequestOrNotFound();
+        subject = new ErrorResponseOrNotFound();
         ReflectionTestUtils.setField(subject, "getClientRedirectURI", mockGetClientRedirectURI);
     }
 

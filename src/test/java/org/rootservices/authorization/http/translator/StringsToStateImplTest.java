@@ -5,15 +5,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.rootservices.authorization.http.translator.exception.ValidationError;
 import org.rootservices.authorization.http.validator.HasOneItem;
 import org.rootservices.authorization.http.validator.IsNotNull;
-import org.rootservices.authorization.persistence.entity.ResponseType;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.fest.assertions.api.Assertions.assertThat;
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
