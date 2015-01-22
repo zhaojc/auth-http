@@ -14,33 +14,18 @@ import java.util.List;
 @Component
 public class StringsToStateImpl implements StringsToState {
 
-    @Autowired
-    private HasOneItem hasOneItem;
-
-    @Autowired
-    private IsNotNull isNotNull;
-
     public StringsToStateImpl() {}
-
-    public StringsToStateImpl(IsNotNull isNotNull, HasOneItem hasOneItem) {
-        this.isNotNull = isNotNull;
-        this.hasOneItem = hasOneItem;
-    }
 
     @Override
     public String run(List<String> items) throws ValidationError {
-
-        if(isNotNull.run(items) == false) {
-            throw new ValidationError("parameter is null");
-        }
 
         // optional parameter.
         if( items.size() == 0 ) {
             return null;
         }
 
-        if(hasOneItem.run(items) == false) {
-            throw new ValidationError("parameter does not have one item");
+        if(items.size() > 1) {
+            throw new ValidationError("parameter has more than one item");
         }
 
         if(items.get(0).isEmpty()) {

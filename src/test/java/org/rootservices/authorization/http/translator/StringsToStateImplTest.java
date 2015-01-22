@@ -15,20 +15,14 @@ import java.util.List;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+
 public class StringsToStateImplTest {
-
-    @Mock
-    private IsNotNull mockIsNotNull;
-
-    @Mock
-    private HasOneItem mockHasOneItem;
 
     private StringsToStateImpl subject;
 
     @Before
     public void run() {
-        subject = new StringsToStateImpl(mockIsNotNull, mockHasOneItem);
+        subject = new StringsToStateImpl();
     }
 
     @Test
@@ -38,9 +32,6 @@ public class StringsToStateImplTest {
         String item = expected;
         items.add(item);
 
-        when(mockIsNotNull.run(items)).thenReturn(true);
-        when(mockHasOneItem.run(items)).thenReturn(true);
-
         String actual = subject.run(items);
         assertThat(actual).isEqualTo(expected);
     }
@@ -49,20 +40,8 @@ public class StringsToStateImplTest {
     public void runEmptyList() throws ValidationError {
         List<String> items = new ArrayList<>();
 
-        when(mockIsNotNull.run(items)).thenReturn(true);
-        when(mockHasOneItem.run(items)).thenReturn(true);
-
         String actual = subject.run(items);
         assertThat(actual).isNull();
-    }
-
-    @Test(expected=ValidationError.class)
-    public void runIsNull() throws ValidationError {
-        List<String> items = null;
-
-        when(mockIsNotNull.run(items)).thenReturn(false);
-
-        subject.run(items);
     }
 
     @Test(expected=ValidationError.class)
@@ -72,9 +51,6 @@ public class StringsToStateImplTest {
         items.add(item);
         items.add(item);
 
-        when(mockIsNotNull.run(items)).thenReturn(true);
-        when(mockHasOneItem.run(items)).thenReturn(false);
-
         subject.run(items);
     }
 
@@ -83,9 +59,6 @@ public class StringsToStateImplTest {
         List<String> items = new ArrayList<>();
         String item = "";
         items.add(item);
-
-        when(mockIsNotNull.run(items)).thenReturn(true);
-        when(mockHasOneItem.run(items)).thenReturn(true);
 
         subject.run(items);
     }
