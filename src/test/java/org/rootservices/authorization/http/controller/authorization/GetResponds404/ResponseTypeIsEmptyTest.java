@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tommackenzie on 12/13/14.
  */
-public class ResponseTypeIsEmptyTest extends ResponseTypeBase {
+public class ResponseTypeIsEmptyTest extends NotFoundBase {
 
     @Test
     public void clientIdEmpty() throws URISyntaxException {

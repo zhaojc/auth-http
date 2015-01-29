@@ -1,14 +1,11 @@
 package org.rootservices.authorization.http.controller.authorization.GetResponds404;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.rootservices.authorization.persistence.entity.ResponseType;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static org.fest.assertions.api.Assertions.assertThat;
@@ -17,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tommackenzie on 12/13/14.
  */
-public class ResponseTypeIsDuplicatedTest extends ResponseTypeBase {
+public class ResponseTypeIsDuplicatedTest extends NotFoundBase {
 
     @Test
     public void clientNotFound() throws URISyntaxException, IOException {

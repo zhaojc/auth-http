@@ -1,27 +1,30 @@
 package org.rootservices.authorization.http.controller.authorization.GetResponds404;
 
 import org.junit.Test;
+import org.rootservices.authorization.persistence.entity.Client;
 
 import javax.ws.rs.core.Response;
-import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.UUID;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by tommackenzie on 12/10/14.
+ * Created by tommackenzie on 1/28/15.
  */
-public class ResponseTypeIsMissingTest extends NotFoundBase {
+public class RedirectUriMismatchTest extends NotFoundBase {
 
     @Test
-    public void clientNotFound() throws URISyntaxException, IOException {
-        UUID uuid = UUID.randomUUID();
+    public void redirectUriIsEmpty() throws URISyntaxException {
+
+        Client client = insert();
 
         Response response = target()
                 .path("authorization")
-                .queryParam("client_id", uuid.toString())
+                .queryParam("client_id", client.getUuid().toString())
+                .queryParam("response_type", client.getResponseType())
+                .queryParam("redirect_uri", "")
                 .request()
                 .get();
 
@@ -33,10 +36,16 @@ public class ResponseTypeIsMissingTest extends NotFoundBase {
     }
 
     @Test
-    public void clientIdIsMissing() throws URISyntaxException, IOException {
+    public void redirectUriIsDuplicated() throws URISyntaxException {
+
+        Client client = insert();
 
         Response response = target()
                 .path("authorization")
+                .queryParam("client_id", client.getUuid().toString())
+                .queryParam("response_type", client.getResponseType())
+                .queryParam("redirect_uri", client.getRedirectURI())
+                .queryParam("redirect_uri", client.getRedirectURI())
                 .request()
                 .get();
 
@@ -48,36 +57,21 @@ public class ResponseTypeIsMissingTest extends NotFoundBase {
     }
 
     @Test
-    public void clientIdDuplicated() throws URISyntaxException, IOException {
+    public void redirectUriNotFound() throws URISyntaxException {
 
-        UUID uuid1 = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
+        Client client = insert();
+        URI mismatch_uri = new URI("https://rootservices.org/mismatch");
 
         Response response = target()
                 .path("authorization")
-                .queryParam("client_id", uuid1.toString())
-                .queryParam("client_id", uuid2.toString())
+                .queryParam("client_id", client.getUuid().toString())
+                .queryParam("response_type", client.getResponseType())
+                .queryParam("redirect_uri", mismatch_uri)
                 .request()
                 .get();
 
         assertEquals(NOT_FOUND, response.getStatus());
 
-        String html = response.readEntity(String.class);
-        String message = getMessage(html);
-        assertThat(message).isEqualTo(NOT_FOUND_MESSAGE);
-    }
-
-    @Test
-    public void clientIdIsNotUUID() throws URISyntaxException {
-        String clientId = "invalidClientId";
-
-        Response response = target()
-                .path("authorization")
-                .queryParam("client_id", clientId)
-                .request()
-                .get();
-
-        assertEquals(NOT_FOUND, response.getStatus());
         String html = response.readEntity(String.class);
         String message = getMessage(html);
         assertThat(message).isEqualTo(NOT_FOUND_MESSAGE);
