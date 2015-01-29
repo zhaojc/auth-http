@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http.controller.authorization;
+package org.rootservices.authorization.http.controller.authorization.GetResponds200;
 
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
@@ -23,29 +23,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tommackenzie on 11/27/14.
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(value={"classpath:applicationContext.xml"})
-public class GetResponds200Test extends JerseyTest {
-
-    private static int OK = Response.Status.OK.getStatusCode();
-
-    @Autowired
-    private ClientRepository clientRepository;
-
-    @Override
-    protected Application configure() {
-        return new org.rootservices.server.Application();
-    }
-
-    public Client insert() throws URISyntaxException {
-        UUID uuid = UUID.randomUUID();
-        ResponseType rt = ResponseType.CODE;
-        URI redirectURI = new URI("https://rootservices.org");
-        Client client = new Client(uuid, rt, redirectURI);
-
-        clientRepository.insert(client);
-        return client;
-    }
+public class RequiredFieldsOnlyTest extends OkStatusCodeBase {
 
     @Test
     public void authorize() throws URISyntaxException {
