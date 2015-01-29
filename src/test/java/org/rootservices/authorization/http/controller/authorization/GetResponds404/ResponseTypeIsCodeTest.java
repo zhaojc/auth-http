@@ -1,22 +1,11 @@
 package org.rootservices.authorization.http.controller.authorization.GetResponds404;
 
 
-import org.glassfish.jersey.test.JerseyTest;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.rootservices.authorization.persistence.entity.Client;
 import org.rootservices.authorization.persistence.entity.ResponseType;
-import org.rootservices.authorization.persistence.repository.ClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
 
@@ -26,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tommackenzie on 11/27/14.
  */
-public class ResponseTypeIsCodeTest extends ResponseTypeBase {
+public class ResponseTypeIsCodeTest extends NotFoundBase {
 
     @Test
     public void clientIdEmpty() throws URISyntaxException {

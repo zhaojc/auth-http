@@ -22,7 +22,7 @@ import java.util.UUID;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(value={"classpath:applicationContext.xml"})
-public class ResponseTypeBase extends JerseyTest {
+public class NotFoundBase extends JerseyTest {
 
     protected static int NOT_FOUND = Response.Status.NOT_FOUND.getStatusCode();
     protected static String NOT_FOUND_MESSAGE = "Not Found";

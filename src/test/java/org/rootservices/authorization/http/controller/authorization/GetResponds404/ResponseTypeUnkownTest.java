@@ -1,7 +1,6 @@
 package org.rootservices.authorization.http.controller.authorization.GetResponds404;
 
 import org.junit.Test;
-import org.rootservices.authorization.persistence.entity.ResponseType;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -14,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tommackenzie on 12/13/14.
  */
-public class ResponseTypeUnkownTest extends ResponseTypeBase {
+public class ResponseTypeUnkownTest extends NotFoundBase {
     @Test
     public void clientIdEmpty() throws URISyntaxException {
 
