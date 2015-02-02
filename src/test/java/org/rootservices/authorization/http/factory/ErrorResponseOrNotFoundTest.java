@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http.context;
+package org.rootservices.authorization.http.factory;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.rootservices.authorization.context.GetClientRedirectURI;
 import org.rootservices.authorization.http.exception.NotFoundException;
+import org.rootservices.authorization.http.factory.ErrorResponseOrNotFound;
 import org.rootservices.authorization.persistence.exceptions.RecordNotFoundException;
 import org.springframework.test.util.ReflectionTestUtils;
 

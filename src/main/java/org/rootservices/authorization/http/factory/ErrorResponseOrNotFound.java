@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http.context;
+package org.rootservices.authorization.http.factory;
 
 import org.rootservices.authorization.context.GetClientRedirectURI;
 import org.rootservices.authorization.http.exception.NotFoundException;

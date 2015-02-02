@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by tommackenzie on 11/27/14.
  */
-public class RequiredFieldsOnlyTest extends OkStatusCodeBase {
+public class RequiredParamFieldsOnlyTest extends OkStatusCodeBase {
 
     @Test
     public void authorize() throws URISyntaxException {
