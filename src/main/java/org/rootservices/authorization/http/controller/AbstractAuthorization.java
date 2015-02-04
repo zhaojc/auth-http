@@ -1,9 +1,11 @@
 package org.rootservices.authorization.http.controller;
 
 import org.glassfish.jersey.server.mvc.Viewable;
+import org.rootservices.authorization.codegrant.exception.client.InformClientException;
 import org.rootservices.authorization.codegrant.exception.client.ResponseTypeIsNotCodeException;
 import org.rootservices.authorization.codegrant.exception.client.UnAuthorizedResponseTypeException;
 import org.rootservices.authorization.codegrant.exception.resourceowner.ClientNotFoundException;
+import org.rootservices.authorization.codegrant.exception.resourceowner.InformResourceOwnerException;
 import org.rootservices.authorization.codegrant.exception.resourceowner.RedirectUriMismatchException;
 import org.rootservices.authorization.codegrant.factory.AuthRequestFactory;
 import org.rootservices.authorization.codegrant.factory.constants.ErrorCode;
@@ -72,21 +74,14 @@ public abstract class AbstractAuthorization<OR> {
                               @QueryParam("redirect_uri") List<String> redirectURIs) throws NotFoundException, URISyntaxException {
 
 
-        AuthRequest authRequest;
+        AuthRequest authRequest = null;
 
         try {
             authRequest = authRequestFactory.makeAuthRequest(clientIds, responseTypes, redirectURIs, scopes);
-        } catch (ClientIdException|RedirectUriException e) {
+        } catch (InformResourceOwnerException e) {
             throw new NotFoundException("Entity not found", e);
-        } catch (ResponseTypeException e) {
-            return errorResponseOrNotFound.run(e.getClientId());
-        } catch (ScopesException e) {
-            if (e.getErrorCode() == ErrorCode.EMPTY_VALUE.getCode() ||
-                    e.getErrorCode() == ErrorCode.DATA_TYPE.getCode()) {
-                return errorResponseOrNotFound.run(e.getClientId(), "invalid_scope");
-            } else {
-                return errorResponseOrNotFound.run(e.getClientId());
-            }
+        } catch (InformClientException e) {
+            return errorResponse(e.getError(), e.getRedirectURI());
         }
 
         Optional<String> cleanedStates;
@@ -102,15 +97,7 @@ public abstract class AbstractAuthorization<OR> {
         } catch (ClientNotFoundException|RedirectUriMismatchException e) {
             throw new NotFoundException("Entity not found", e);
         } catch (UnAuthorizedResponseTypeException e) {
-            String formData = "#error=unauthorized_client";
-            URI location = new URI(e.getRedirectURI().toString() + formData);
-            Response response = Response.status(Response.Status.FOUND.getStatusCode())
-                    .location(location)
-                    .type(MediaType.APPLICATION_FORM_URLENCODED)
-                    .build();
-
-            return response;
-
+            return errorResponse("unauthorized_client", e.getRedirectURI());
         } catch (ResponseTypeIsNotCodeException e) {
             e.printStackTrace();
         }
@@ -119,6 +106,16 @@ public abstract class AbstractAuthorization<OR> {
         OR okResponse = (OR) okResponseFactory.buildOkResponse();
         Viewable v = new Viewable(templateName, okResponse);
         return Response.ok().entity(v).build();
+    }
+
+    private Response errorResponse(String error, URI redirectURI) throws URISyntaxException {
+
+        String formData = "#error="+error;
+        URI location = new URI(redirectURI.toString() + formData);
+        return Response.status(Response.Status.FOUND.getStatusCode())
+                .location(location)
+                .type(MediaType.APPLICATION_FORM_URLENCODED)
+                .build();
     }
 
     protected abstract String getTemplateName();

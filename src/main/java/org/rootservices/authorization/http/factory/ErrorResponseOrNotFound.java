@@ -1,6 +1,7 @@
 package org.rootservices.authorization.http.factory;
 
 import org.rootservices.authorization.context.GetClientRedirectURI;
+import org.rootservices.authorization.context.GetClientRedirectURIImpl;
 import org.rootservices.authorization.http.exception.NotFoundException;
 import org.rootservices.authorization.persistence.exceptions.RecordNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
