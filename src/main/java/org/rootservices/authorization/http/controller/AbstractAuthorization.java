@@ -8,7 +8,6 @@ import org.rootservices.authorization.codegrant.exception.resourceowner.ClientNo
 import org.rootservices.authorization.codegrant.exception.resourceowner.InformResourceOwnerException;
 import org.rootservices.authorization.codegrant.exception.resourceowner.RedirectUriMismatchException;
 import org.rootservices.authorization.codegrant.factory.AuthRequestFactory;
-import org.rootservices.authorization.codegrant.factory.constants.ErrorCode;
 import org.rootservices.authorization.codegrant.factory.exception.*;
 import org.rootservices.authorization.codegrant.factory.optional.StateFactory;
 import org.rootservices.authorization.codegrant.request.AuthRequest;
