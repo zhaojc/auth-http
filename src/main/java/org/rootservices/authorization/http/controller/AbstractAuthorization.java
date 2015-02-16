@@ -1,21 +1,20 @@
 package org.rootservices.authorization.http.controller;
 
 import org.glassfish.jersey.server.mvc.Viewable;
+import org.rootservices.authorization.codegrant.exception.client.InformClientException;
 import org.rootservices.authorization.codegrant.exception.client.ResponseTypeIsNotCodeException;
 import org.rootservices.authorization.codegrant.exception.client.UnAuthorizedResponseTypeException;
 import org.rootservices.authorization.codegrant.exception.resourceowner.ClientNotFoundException;
+import org.rootservices.authorization.codegrant.exception.resourceowner.InformResourceOwnerException;
 import org.rootservices.authorization.codegrant.exception.resourceowner.RedirectUriMismatchException;
+import org.rootservices.authorization.codegrant.factory.AuthRequestFactory;
+import org.rootservices.authorization.codegrant.factory.exception.*;
+import org.rootservices.authorization.codegrant.factory.optional.StateFactory;
 import org.rootservices.authorization.codegrant.request.AuthRequest;
 import org.rootservices.authorization.codegrant.request.ValidateAuthRequest;
-import org.rootservices.authorization.http.builder.OkResponseBuilder;
-import org.rootservices.authorization.http.context.ErrorResponseOrNotFound;
+import org.rootservices.authorization.http.factory.OkResponseFactory;
+import org.rootservices.authorization.http.factory.ErrorResponseOrNotFound;
 import org.rootservices.authorization.http.exception.NotFoundException;
-import org.rootservices.authorization.codegrant.translator.*;
-import org.rootservices.authorization.codegrant.translator.exception.EmptyValueError;
-import org.rootservices.authorization.codegrant.translator.exception.InvalidValueError;
-import org.rootservices.authorization.codegrant.translator.exception.ValidationError;
-import org.rootservices.authorization.persistence.entity.ResponseType;
-import org.rootservices.authorization.persistence.entity.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.GET;
@@ -49,19 +48,10 @@ import java.util.UUID;
 public abstract class AbstractAuthorization<OR> {
 
     @Autowired
-    private StringsToUUID stringsToUUID;
+    private AuthRequestFactory authRequestFactory;
 
     @Autowired
-    private StringsToResponseType stringsToResponseType;
-
-    @Autowired
-    private StringsToState stringsToState;
-
-    @Autowired
-    private StringsToScopes stringsToScopes;
-
-    @Autowired
-    private StringsToURI stringsToURI;
+    private StateFactory stateFactory;
 
     @Autowired
     private ValidateAuthRequest validateAuthRequest;
@@ -70,7 +60,7 @@ public abstract class AbstractAuthorization<OR> {
     private ErrorResponseOrNotFound errorResponseOrNotFound;
 
     @Autowired
-    private OkResponseBuilder okResponseBuilder;
+    private OkResponseFactory okResponseFactory;
 
     public AbstractAuthorization() {}
 
@@ -82,75 +72,49 @@ public abstract class AbstractAuthorization<OR> {
                               @QueryParam("scope") List<String> scopes,
                               @QueryParam("redirect_uri") List<String> redirectURIs) throws NotFoundException, URISyntaxException {
 
-        UUID clientId;
-        ResponseType responseType;
-        String state;
-        List<Scope> cleanedScopes;
-        URI redirectURI;
 
-        // required
+        AuthRequest authRequest = null;
+
         try {
-            clientId = stringsToUUID.run(clientIds);
-        } catch (ValidationError e) {
+            authRequest = authRequestFactory.makeAuthRequest(clientIds, responseTypes, redirectURIs, scopes);
+        } catch (InformResourceOwnerException e) {
             throw new NotFoundException("Entity not found", e);
+        } catch (InformClientException e) {
+            return errorResponse(e.getError(), e.getRedirectURI());
         }
 
+        Optional<String> cleanedStates;
         try {
-            responseType = stringsToResponseType.run(responseTypes);
-        } catch (ValidationError e) {
+            cleanedStates = stateFactory.makeState(states);
+        } catch (StateException e) {
+            UUID clientId =  UUID.fromString(clientIds.get(0));
             return errorResponseOrNotFound.run(clientId);
         }
-
-        // optional
-        try {
-            state = stringsToState.run(states);
-        } catch (ValidationError validationError) {
-            return errorResponseOrNotFound.run(clientId);
-        }
-
-        try {
-            cleanedScopes = stringsToScopes.run(scopes);
-        } catch(EmptyValueError|InvalidValueError e) {
-            return errorResponseOrNotFound.run(clientId, "invalid_scope");
-        } catch (ValidationError e) {
-            return errorResponseOrNotFound.run(clientId);
-        }
-
-        try {
-            redirectURI = stringsToURI.run(redirectURIs);
-        } catch (InvalidValueError|EmptyValueError e) {
-            throw new NotFoundException("Entity not found", e);
-        } catch(ValidationError e) {
-            throw new NotFoundException("Entity not found", e);
-        }
-
-        AuthRequest authRequest = new AuthRequest();
-        authRequest.setClientId(clientId);
-        authRequest.setResponseType(responseType);
-        authRequest.setRedirectURI(redirectURI);
 
         try {
             validateAuthRequest.run(authRequest);
         } catch (ClientNotFoundException|RedirectUriMismatchException e) {
             throw new NotFoundException("Entity not found", e);
         } catch (UnAuthorizedResponseTypeException e) {
-            String formData = "#error=unauthorized_client";
-            URI location = new URI(e.getRedirectURI().toString() + formData);
-            Response response = Response.status(Response.Status.FOUND.getStatusCode())
-                    .location(location)
-                    .type(MediaType.APPLICATION_FORM_URLENCODED)
-                    .build();
-
-            return response;
-
+            return errorResponse("unauthorized_client", e.getRedirectURI());
         } catch (ResponseTypeIsNotCodeException e) {
             e.printStackTrace();
         }
 
         String templateName = getTemplateName();
-        OR okResponse = (OR) okResponseBuilder.buildOkResponse();
+        OR okResponse = (OR) okResponseFactory.buildOkResponse();
         Viewable v = new Viewable(templateName, okResponse);
         return Response.ok().entity(v).build();
+    }
+
+    private Response errorResponse(String error, URI redirectURI) throws URISyntaxException {
+
+        String formData = "#error="+error;
+        URI location = new URI(redirectURI.toString() + formData);
+        return Response.status(Response.Status.FOUND.getStatusCode())
+                .location(location)
+                .type(MediaType.APPLICATION_FORM_URLENCODED)
+                .build();
     }
 
     protected abstract String getTemplateName();

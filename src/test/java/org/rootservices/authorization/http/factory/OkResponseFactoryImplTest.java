@@ -1,19 +1,20 @@
-package org.rootservices.authorization.http.builder;
+package org.rootservices.authorization.http.factory;
 
-import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
+import org.rootservices.authorization.http.factory.OkResponseFactory;
+import org.rootservices.authorization.http.factory.OkResponseFactoryImpl;
 import org.rootservices.authorization.http.response.OkResponse;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 
-public class OkResponseBuilderImplTest {
+public class OkResponseFactoryImplTest {
 
-    private OkResponseBuilder subject;
+    private OkResponseFactory subject;
 
     @Before
     public void setUp() {
-        subject = new OkResponseBuilderImpl();
+        subject = new OkResponseFactoryImpl();
     }
 
     @Test

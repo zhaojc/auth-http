@@ -80,7 +80,7 @@ public class InvalidResponseTypeTest extends JerseyTest {
     @Test
     public void responseTypeIsUnknown() throws URISyntaxException {
         Client client = insert(ResponseType.CODE);
-        URI expectedLocation = new URI(client.getRedirectURI() + "#error=invalid_request");
+        URI expectedLocation = new URI(client.getRedirectURI() + "#error=unsupported_response_type");
 
         Response response = target()
                 .path("authorization")
