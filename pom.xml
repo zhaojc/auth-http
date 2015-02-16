@@ -14,7 +14,7 @@
         <org.springframework.version>4.1.0.RELEASE</org.springframework.version>
         <jersey.version>2.8</jersey.version>
         <jetty.version>9.2.3.v20140905</jetty.version>
-        <auth.version>1.0.87354896-SNAPSHOT</auth.version>
+        <auth.version>1.0-SNAPSHOT</auth.version>
         <org.postgres.version>9.3-1102-jdbc4</org.postgres.version>
         <cucumber.version>1.2.0</cucumber.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
