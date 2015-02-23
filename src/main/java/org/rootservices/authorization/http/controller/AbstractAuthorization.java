@@ -1,12 +1,8 @@
 package org.rootservices.authorization.http.controller;
 
 import org.glassfish.jersey.server.mvc.Viewable;
-import org.rootservices.authorization.codegrant.exception.client.InformClientException;
-import org.rootservices.authorization.codegrant.exception.client.ResponseTypeIsNotCodeException;
-import org.rootservices.authorization.codegrant.exception.client.UnAuthorizedResponseTypeException;
-import org.rootservices.authorization.codegrant.exception.resourceowner.ClientNotFoundException;
-import org.rootservices.authorization.codegrant.exception.resourceowner.InformResourceOwnerException;
-import org.rootservices.authorization.codegrant.exception.resourceowner.RedirectUriMismatchException;
+import org.rootservices.authorization.codegrant.exception.InformClientException;
+import org.rootservices.authorization.codegrant.exception.InformResourceOwnerException;
 import org.rootservices.authorization.codegrant.factory.AuthRequestFactory;
 import org.rootservices.authorization.codegrant.factory.exception.*;
 import org.rootservices.authorization.codegrant.factory.optional.StateFactory;
@@ -93,12 +89,10 @@ public abstract class AbstractAuthorization<OR> {
 
         try {
             validateAuthRequest.run(authRequest);
-        } catch (ClientNotFoundException|RedirectUriMismatchException e) {
+        } catch (InformResourceOwnerException e) {
             throw new NotFoundException("Entity not found", e);
-        } catch (UnAuthorizedResponseTypeException e) {
+        } catch (InformClientException e) {
             return errorResponse("unauthorized_client", e.getRedirectURI());
-        } catch (ResponseTypeIsNotCodeException e) {
-            e.printStackTrace();
         }
 
         String templateName = getTemplateName();
