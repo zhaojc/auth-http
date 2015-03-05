@@ -1,13 +1,14 @@
 package org.rootservices.authorization.http.controller;
 
 import org.glassfish.jersey.server.mvc.Viewable;
-import org.rootservices.authorization.codegrant.exception.InformClientException;
-import org.rootservices.authorization.codegrant.exception.InformResourceOwnerException;
-import org.rootservices.authorization.codegrant.factory.AuthRequestFactory;
-import org.rootservices.authorization.codegrant.factory.exception.*;
-import org.rootservices.authorization.codegrant.factory.optional.StateFactory;
-import org.rootservices.authorization.codegrant.request.AuthRequest;
-import org.rootservices.authorization.codegrant.request.ValidateAuthRequest;
+import org.rootservices.authorization.grant.ValidateParams;
+import org.rootservices.authorization.grant.code.exception.InformClientException;
+import org.rootservices.authorization.grant.code.exception.InformResourceOwnerException;
+import org.rootservices.authorization.grant.code.factory.AuthRequestFactory;
+import org.rootservices.authorization.grant.code.factory.exception.*;
+import org.rootservices.authorization.grant.code.factory.optional.StateFactory;
+import org.rootservices.authorization.grant.code.request.AuthRequest;
+import org.rootservices.authorization.grant.code.request.ValidateAuthRequest;
 import org.rootservices.authorization.http.factory.OkResponseFactory;
 import org.rootservices.authorization.http.factory.ErrorResponseOrNotFound;
 import org.rootservices.authorization.http.exception.NotFoundException;
@@ -44,13 +45,7 @@ import java.util.UUID;
 public abstract class AbstractAuthorization<OR> {
 
     @Autowired
-    private AuthRequestFactory authRequestFactory;
-
-    @Autowired
-    private StateFactory stateFactory;
-
-    @Autowired
-    private ValidateAuthRequest validateAuthRequest;
+    private ValidateParams validateParams;
 
     @Autowired
     private ErrorResponseOrNotFound errorResponseOrNotFound;
@@ -68,31 +63,15 @@ public abstract class AbstractAuthorization<OR> {
                               @QueryParam("scope") List<String> scopes,
                               @QueryParam("redirect_uri") List<String> redirectURIs) throws NotFoundException, URISyntaxException {
 
-
-        AuthRequest authRequest = null;
-
         try {
-            authRequest = authRequestFactory.makeAuthRequest(clientIds, responseTypes, redirectURIs, scopes);
+            validateParams.run(clientIds, responseTypes, redirectURIs, scopes, states);
         } catch (InformResourceOwnerException e) {
             throw new NotFoundException("Entity not found", e);
         } catch (InformClientException e) {
             return errorResponse(e.getError(), e.getRedirectURI());
-        }
-
-        Optional<String> cleanedStates;
-        try {
-            cleanedStates = stateFactory.makeState(states);
         } catch (StateException e) {
             UUID clientId =  UUID.fromString(clientIds.get(0));
             return errorResponseOrNotFound.run(clientId);
-        }
-
-        try {
-            validateAuthRequest.run(authRequest);
-        } catch (InformResourceOwnerException e) {
-            throw new NotFoundException("Entity not found", e);
-        } catch (InformClientException e) {
-            return errorResponse("unauthorized_client", e.getRedirectURI());
         }
 
         String templateName = getTemplateName();
