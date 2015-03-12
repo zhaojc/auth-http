@@ -69,9 +69,6 @@ public abstract class AbstractAuthorization<OR> {
             throw new NotFoundException("Entity not found", e);
         } catch (InformClientException e) {
             return errorResponse(e.getError(), e.getRedirectURI());
-        } catch (StateException e) {
-            UUID clientId =  UUID.fromString(clientIds.get(0));
-            return errorResponseOrNotFound.run(clientId);
         }
 
         String templateName = getTemplateName();
