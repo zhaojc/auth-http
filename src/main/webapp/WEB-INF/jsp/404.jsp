@@ -3,7 +3,7 @@
 <head></head>
 <body>
 
-<div id="message">{{message}}</div>
+<div id="message">Not Found</div>
 
 </body>
 </html>

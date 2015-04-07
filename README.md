@@ -49,5 +49,7 @@ Running the application
 ------------------------
 <ul>
     <li>mvn clean package</li>
-    <li>java -cp target/classes:target/dependency/* org.rootservices.server.Main</li>
+    <li>set environment variables</li>
+    <li>start database</li>
+    <li>deploy war file to a servlet container</li>
 </ul>
