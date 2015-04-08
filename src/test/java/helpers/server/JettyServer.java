@@ -40,10 +40,11 @@ public class JettyServer {
 
         context.setConfigurations(new Configuration[]{
                 new WebXmlConfiguration(),
-                new AnnotationConfiguration(),
-                new JettyWebXmlConfiguration(),
-                new FragmentConfiguration(),
+                new AnnotationConfiguration()
         });
+
+        File tempDirectory = new File("/tmp/auth-http");
+        context.setTempDirectory(tempDirectory);
 
         FileResource containerResources = new FileResource(classPath);
         context.getMetaData().addContainerResource(containerResources);
