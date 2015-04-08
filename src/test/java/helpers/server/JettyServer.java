@@ -43,7 +43,7 @@ public class JettyServer {
                 new AnnotationConfiguration()
         });
 
-        File tempDirectory = new File("/tmp/auth-http");
+        File tempDirectory = new File("/tmp");
         context.setTempDirectory(tempDirectory);
 
         FileResource containerResources = new FileResource(classPath);
