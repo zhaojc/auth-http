@@ -167,7 +167,7 @@ public class AuthorizationServletTest {
     /**
      * Avoids violation of unique key constraint in resource_owner schema.
      * resource_owner.email must be unique.
-     * 
+     *
      * @return
      */
     private String randomEmailAddress() {

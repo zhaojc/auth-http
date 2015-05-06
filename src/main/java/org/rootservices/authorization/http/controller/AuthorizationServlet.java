@@ -10,6 +10,7 @@ import org.rootservices.authorization.grant.code.exception.InformResourceOwnerEx
 import org.rootservices.authorization.grant.code.request.AuthRequest;
 import org.rootservices.authorization.http.QueryStringToMap;
 import org.rootservices.authorization.http.QueryStringToMapImpl;
+import org.rootservices.authorization.http.presenter.AuthorizationPresenter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -63,6 +64,8 @@ public class AuthorizationServlet extends HttpServlet {
             return;
         }
 
+        AuthorizationPresenter presenter = new AuthorizationPresenter();
+        req.setAttribute("presenter", presenter);
         req.getRequestDispatcher("/WEB-INF/jsp/authorization.jsp").forward(req, resp);
         return;
     }
@@ -90,6 +93,12 @@ public class AuthorizationServlet extends HttpServlet {
             authResponse = requestAuthCode.run(input);
         } catch (UnauthorizedException e) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+            AuthorizationPresenter presenter = new AuthorizationPresenter();
+            presenter.setEmail(input.getUserName());
+
+            req.setAttribute("presenter", presenter);
+            req.getRequestDispatcher("/WEB-INF/jsp/authorization.jsp").forward(req, resp);
             return;
         } catch (InformResourceOwnerException e) {
             req.getRequestDispatcher("notFoundServlet").forward(req, resp);
