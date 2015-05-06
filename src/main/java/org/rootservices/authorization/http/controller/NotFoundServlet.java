@@ -22,4 +22,11 @@ public class NotFoundServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/jsp/404.jsp").forward(req, resp);
         return;
     }
+
+    @Override
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        req.getRequestDispatcher("/WEB-INF/jsp/404.jsp").forward(req, resp);
+        return;
+    }
 }

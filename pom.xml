@@ -129,7 +129,6 @@
                 <configuration>
                     <parallel>method</parallel>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
-                    <groups>helpers.category.ServletContainer</groups>
                     <includes>
                         <include>**/**Suite.java</include>
                         <include>>**/**Test.java</include>
