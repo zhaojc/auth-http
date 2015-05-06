@@ -82,7 +82,8 @@ public class AuthorizationServletTest {
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
         Response response = f.get();
         assertThat(response.getStatusCode()).isEqualTo(302);
-        assertThat(response.getHeader("location")).isEqualTo(client.getRedirectURI().toString());
+        String expectedLocaton = client.getRedirectURI() + "?error=unauthorized_client";
+        assertThat(response.getHeader("location")).isEqualTo(expectedLocaton);
     }
 
     @Test
