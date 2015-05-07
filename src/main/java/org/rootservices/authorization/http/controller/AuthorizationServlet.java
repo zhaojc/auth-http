@@ -60,7 +60,8 @@ public class AuthorizationServlet extends HttpServlet {
             return;
         } catch (InformClientException e) {
             resp.setContentType("application/x-www-form-urlencoded");
-            resp.sendRedirect(e.getRedirectURI().toString());
+            String location = e.getRedirectURI() + "?error=" + e.getError();
+            resp.sendRedirect(location);
             return;
         }
 
