@@ -3,11 +3,23 @@ HTTP for Authorization
 
 Dependencies
 ------------
-<ul>
-    <li>Postgres 9.3</li>
-    <li>Java 1.8</li>
-    <li>Maven 3.2.3</li>
-</ul>
+ - Postgres 9.3
+ - Java 1.8
+ - Maven 3.2.3
+ - Servlet Container that respects servlet api 3.1.0
+
+Contributing
+------------
+ - All code changes must have a story or bug written in Gherkin.
+ - Follow the auth [setup](https://github.com/RootServices/auth/blob/development/setup.md) instructions
+ - Follow the auth-http [setup](setup.md) instructions
+ - All code must be written with the SOLID principles.
+ - Unit and Integration tests are required.
+
+Requesting Features and reporting bugs
+-------------------------------------
+ - Features are reported and tracked in [pivotal tracker](https://www.pivotaltracker.com/n/projects/1199316).
+ - Reporting issues through github is acceptable. We will probably transfer them to PT.
 
 Environment Variables for configuring db connection
 ---------------------------------------------------
@@ -21,35 +33,23 @@ export AUTH_DB_DRIVER="org.postgresql.Driver";
 Running migrations (replace values where necessary).
 ----------------------------------------------------
 ```
+mvn clean package -DskipTests
 mvn flyway:migrate -Dflyway.user=postgres -Dflyway.password="" -Dflyway.url="jdbc:postgresql://127.0.0.1:5432/auth" -Dflyway.initOnMigrate=true
 ```
 
 Running the tests from the terminal.
 ------------------------------------
-<ul>
-    <li>Install all dependencies.</li>
-    <li>Set environment variables.</li>
-    <li>Create the db specified in AUTH_DB_URL.</li>
-    <li>Run migrations against the test db (see, Running Migrations)</li>
-    <li>Use maven to run the tests, `mvn test`</li>
-</ul>
-
-Running the tests from IntelliJ 13.1.4
----------------------------------------
-<ul>
-    <li>Install all dependencies.</li>
-    <li>Run -> Edit Configurations -> Defaults -> JUnit -> Configruation -> Enter Env Variables into, `Environment Variables`</li>
-    <li>Run -> Edit Configurations -> Maven -> Enter `test` for `Command Line` -> Runner -> Enter Env Variables into, `Environment Variables`</li>
-    <li>Create the db specified in AUTH_DB_URL.</li>
-    <li>Run migrations against the test db (see, Running Migrations)</li>
-    <li>You are ready to debug and run mvn commands from the IDE</li>
-</ul>
+ - Install all dependencies.
+ - Set environment variables (see, Running Migrations).
+ - Create the db specified in AUTH_DB_URL.
+ - Run migrations against the test db (see, Running Migrations)
+ - Use maven to run the tests, `mvn test`
 
 Running the application
 ------------------------
-<ul>
-    <li>mvn clean package</li>
-    <li>set environment variables</li>
-    <li>start database</li>
-    <li>deploy war file to a servlet container</li>
-</ul>
+ - set the required environment variables.
+ - cd /path/to/auth-http
+ - start database server
+ - run the persistence migrations (see, Running Migrations)
+ - deploy war file to a servlet container
+
