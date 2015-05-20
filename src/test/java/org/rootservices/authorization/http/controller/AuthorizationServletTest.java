@@ -14,19 +14,13 @@ import org.rootservices.authorization.http.GetServletURI;
 import org.rootservices.authorization.http.GetServletURIImpl;
 import org.rootservices.authorization.http.QueryStringToMap;
 import org.rootservices.authorization.http.QueryStringToMapImpl;
-import org.rootservices.authorization.persistence.entity.Client;
-import org.rootservices.authorization.persistence.entity.ResourceOwner;
-import org.rootservices.authorization.persistence.entity.ResponseType;
+import org.rootservices.authorization.persistence.entity.*;
 import org.rootservices.authorization.persistence.repository.ClientRepository;
+import org.rootservices.authorization.persistence.repository.ClientScopesRepository;
 import org.rootservices.authorization.persistence.repository.ResourceOwnerRepository;
+import org.rootservices.authorization.persistence.repository.ScopeRepository;
 import org.rootservices.authorization.security.RandomString;
 import org.rootservices.authorization.security.TextHasher;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,6 +36,8 @@ import static org.fest.assertions.api.Assertions.assertThat;
 public class AuthorizationServletTest {
 
     private static ClientRepository clientRepository;
+    private static ScopeRepository scopeRepository;
+    private static ClientScopesRepository clientScopesRepository;
     protected static Class ServletClass = AuthorizationServlet.class;
     protected static String baseURI = String.valueOf(IntegrationTestSuite.getServer().getURI());
     protected static String servletURI;
@@ -49,11 +45,13 @@ public class AuthorizationServletTest {
     @BeforeClass
     public static void beforeClass() {
         clientRepository = IntegrationTestSuite.getContext().getBean(ClientRepository.class);
+        scopeRepository = IntegrationTestSuite.getContext().getBean(ScopeRepository.class);
+        clientScopesRepository = IntegrationTestSuite.getContext().getBean(ClientScopesRepository.class);
         GetServletURI getServletURI = new GetServletURIImpl();
         servletURI = getServletURI.run(baseURI, ServletClass);
     }
 
-    public Client insertClient() throws URISyntaxException {
+    public Client insertClientWithScopes() throws URISyntaxException {
 
         UUID uuid = UUID.randomUUID();
         ResponseType rt = ResponseType.CODE;
@@ -61,6 +59,19 @@ public class AuthorizationServletTest {
         Client client = new Client(uuid, rt, redirectUri);
 
         clientRepository.insert(client);
+
+        List<Scope> scopes = new ArrayList<>();
+        Scope scope = new Scope();
+        scope.setUuid(UUID.randomUUID());
+        scope.setName("profile");
+        scopes.add(scope);
+
+        scopeRepository.insert(scope);
+        ClientScope clientScope = new ClientScope(
+                UUID.randomUUID(), client.getUuid(), scope.getUuid()
+        );
+        clientScopesRepository.insert(clientScope);
+
         return client;
     }
 
@@ -73,7 +84,7 @@ public class AuthorizationServletTest {
 
     @Test
     public void testGetWithWrongResponseTypeExpect302() throws Exception {
-        Client client = insertClient();
+        Client client = insertClientWithScopes();
 
         String servletURI = this.servletURI +
                 "?client_id=" + client.getUuid().toString() +
@@ -88,7 +99,7 @@ public class AuthorizationServletTest {
 
     @Test
     public void testGetExpect200() throws Exception {
-        Client client = insertClient();
+        Client client = insertClientWithScopes();
 
         String servletURI = this.servletURI +
                 "?client_id=" + client.getUuid().toString() +
@@ -111,7 +122,7 @@ public class AuthorizationServletTest {
 
     @Test
     public void testPostExpect403() throws URISyntaxException, ExecutionException, InterruptedException {
-        Client client = insertClient();
+        Client client = insertClientWithScopes();
 
         String servletURI = this.servletURI +
                 "?client_id=" + client.getUuid().toString() +
@@ -144,7 +155,7 @@ public class AuthorizationServletTest {
 
     @Test
     public void testPostWithWrongResponseTypeExpect302() throws Exception {
-        Client client = insertClient();
+        Client client = insertClientWithScopes();
         String expectedLocation = client.getRedirectURI()
                 + "?error=unauthorized_client";
 
@@ -195,7 +206,7 @@ public class AuthorizationServletTest {
     @Test
     public void testPostExpectAuthCode() throws Exception {
 
-        Client client = insertClient();
+        Client client = insertClientWithScopes();
 
         String email = randomEmailAddress();
         ResourceOwner ro = insertResourceOwner(email);
@@ -235,7 +246,7 @@ public class AuthorizationServletTest {
     @Test
     public void testPostWithStateExpectAuthCode() throws Exception {
 
-        Client client = insertClient();
+        Client client = insertClientWithScopes();
 
         String email = randomEmailAddress();
         ResourceOwner ro = insertResourceOwner(email);
