@@ -1,5 +1,6 @@
 HTTP for Authorization
 -----------------------
+[![Build Status](https://travis-ci.org/RootServices/auth-http.svg?branch=development)](https://travis-ci.org/RootServices/auth-http)
 
 Dependencies
 ------------
