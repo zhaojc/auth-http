@@ -17,8 +17,3 @@ Intellij 14.1.1
  - click on `auth/pom.xml`
  - in the left hand project window `auth-http` should appear.
  - start coding.
- 
-Known limitations of IntelliJ 14.1.1
-------------------------------------
- - you cannot auto deploy the web application to the servlet container.
- - instead you will need to manually deploy the war file.
