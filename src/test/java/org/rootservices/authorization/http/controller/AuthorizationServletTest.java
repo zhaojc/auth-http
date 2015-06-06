@@ -3,6 +3,11 @@ package org.rootservices.authorization.http.controller;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Param;
 import helpers.category.ServletContainer;
+import helpers.fixture.FormFactory;
+import helpers.fixture.MakeRandomEmailAddress;
+import helpers.fixture.persistence.FactoryForPersistence;
+import helpers.fixture.persistence.LoadConfidentialClientWithScopes;
+import helpers.fixture.persistence.LoadResourceOwner;
 import helpers.suite.IntegrationTestSuite;
 
 
@@ -15,12 +20,7 @@ import org.rootservices.authorization.http.GetServletURIImpl;
 import org.rootservices.authorization.http.QueryStringToMap;
 import org.rootservices.authorization.http.QueryStringToMapImpl;
 import org.rootservices.authorization.persistence.entity.*;
-import org.rootservices.authorization.persistence.repository.ClientRepository;
-import org.rootservices.authorization.persistence.repository.ClientScopesRepository;
-import org.rootservices.authorization.persistence.repository.ResourceOwnerRepository;
-import org.rootservices.authorization.persistence.repository.ScopeRepository;
 import org.rootservices.authorization.security.RandomString;
-import org.rootservices.authorization.security.TextHasher;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -35,44 +35,32 @@ import static org.fest.assertions.api.Assertions.assertThat;
 @Category(ServletContainer.class)
 public class AuthorizationServletTest {
 
-    private static ClientRepository clientRepository;
-    private static ScopeRepository scopeRepository;
-    private static ClientScopesRepository clientScopesRepository;
+    private static LoadConfidentialClientWithScopes loadConfidentialClientWithScopes;
+    private static RandomString randomString;
+    private static MakeRandomEmailAddress makeRandomEmailAddress;
+    private static LoadResourceOwner loadResourceOwner;
+
     protected static Class ServletClass = AuthorizationServlet.class;
     protected static String baseURI = String.valueOf(IntegrationTestSuite.getServer().getURI());
     protected static String servletURI;
 
     @BeforeClass
     public static void beforeClass() {
-        clientRepository = IntegrationTestSuite.getContext().getBean(ClientRepository.class);
-        scopeRepository = IntegrationTestSuite.getContext().getBean(ScopeRepository.class);
-        clientScopesRepository = IntegrationTestSuite.getContext().getBean(ClientScopesRepository.class);
+
+        FactoryForPersistence factoryForPersistence = new FactoryForPersistence(
+            IntegrationTestSuite.getContext()
+        );
+
+        loadConfidentialClientWithScopes = factoryForPersistence.makeLoadConfidentialClientWithScopes();
+
+        // resource owner email address.
+        randomString = IntegrationTestSuite.getContext().getBean(RandomString.class);
+        makeRandomEmailAddress = new MakeRandomEmailAddress(randomString);
+
+        loadResourceOwner = factoryForPersistence.makeLoadResourceOwner();
+
         GetServletURI getServletURI = new GetServletURIImpl();
         servletURI = getServletURI.run(baseURI, ServletClass);
-    }
-
-    public Client insertClientWithScopes() throws URISyntaxException {
-
-        UUID uuid = UUID.randomUUID();
-        ResponseType rt = ResponseType.CODE;
-        URI redirectUri = new URI("https://rootservices.org");
-        Client client = new Client(uuid, rt, redirectUri);
-
-        clientRepository.insert(client);
-
-        List<Scope> scopes = new ArrayList<>();
-        Scope scope = new Scope();
-        scope.setUuid(UUID.randomUUID());
-        scope.setName("profile");
-        scopes.add(scope);
-
-        scopeRepository.insert(scope);
-        ClientScope clientScope = new ClientScope(
-                UUID.randomUUID(), client.getUuid(), scope.getUuid()
-        );
-        clientScopesRepository.insert(clientScope);
-
-        return client;
     }
 
     @Test
@@ -84,51 +72,41 @@ public class AuthorizationServletTest {
 
     @Test
     public void testGetWithWrongResponseTypeExpect302() throws Exception {
-        Client client = insertClientWithScopes();
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
         String servletURI = this.servletURI +
-                "?client_id=" + client.getUuid().toString() +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=token";
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
         Response response = f.get();
         assertThat(response.getStatusCode()).isEqualTo(302);
-        String expectedLocaton = client.getRedirectURI() + "?error=unauthorized_client";
+        String expectedLocaton = confidentialClient.getClient().getRedirectURI() + "?error=unauthorized_client";
         assertThat(response.getHeader("location")).isEqualTo(expectedLocaton);
     }
 
     @Test
     public void testGetExpect200() throws Exception {
-        Client client = insertClientWithScopes();
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
         String servletURI = this.servletURI +
-                "?client_id=" + client.getUuid().toString() +
-                "&response_type=" + client.getResponseType().toString();
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
         Response response = f.get();
         assertThat(response.getStatusCode()).isEqualTo(200);
     }
 
-    private List<Param> loginFormData(String email) {
-        Param userName = new Param("email", email);
-        Param password = new Param("password", "password");
-        List<Param> postData = new ArrayList<>();
-        postData.add(userName);
-        postData.add(password);
-
-        return postData;
-    }
-
     @Test
     public void testPostExpect403() throws URISyntaxException, ExecutionException, InterruptedException {
-        Client client = insertClientWithScopes();
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
         String servletURI = this.servletURI +
-                "?client_id=" + client.getUuid().toString() +
-                "&response_type=" + client.getResponseType().toString();
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
-        List<Param> postData = loginFormData("test@rootservices.org");
+        List<Param> postData = FormFactory.makeLoginForm("test@rootservices.org");
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -142,7 +120,7 @@ public class AuthorizationServletTest {
     @Test
     public void testPostExpect404() throws Exception {
 
-        List<Param> postData = loginFormData("test@rootservices.org");
+        List<Param> postData = FormFactory.makeLoginForm("test@rootservices.org");
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -155,15 +133,15 @@ public class AuthorizationServletTest {
 
     @Test
     public void testPostWithWrongResponseTypeExpect302() throws Exception {
-        Client client = insertClientWithScopes();
-        String expectedLocation = client.getRedirectURI()
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        String expectedLocation = confidentialClient.getClient().getRedirectURI()
                 + "?error=unauthorized_client";
 
         String servletURI = this.servletURI +
-                "?client_id=" + client.getUuid().toString() +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=token";
 
-        List<Param> postData = loginFormData("test@rootservices.org");
+        List<Param> postData = FormFactory.makeLoginForm("test@rootservices.org");
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -176,46 +154,19 @@ public class AuthorizationServletTest {
                 .isEqualTo(expectedLocation);
     }
 
-    /**
-     * Avoids violation of unique key constraint in resource_owner schema.
-     * resource_owner.email must be unique.
-     *
-     * @return
-     */
-    private String randomEmailAddress() {
-        RandomString rs = (RandomString) IntegrationTestSuite.getContext().getBean(RandomString.class);
-        String user = rs.run();
-        return "auth-http-test-" + user + "@rootservices.org";
-    }
-
-    private ResourceOwner insertResourceOwner(String email) {
-        ResourceOwner ro = new ResourceOwner();
-        ro.setUuid(UUID.randomUUID());
-        ro.setEmail(email);
-
-        TextHasher textHasher = IntegrationTestSuite.getContext().getBean(TextHasher.class);
-
-        String hashedPassword = textHasher.run("password");
-        ro.setPassword(hashedPassword.getBytes());
-
-        ResourceOwnerRepository resourceOwnerRepository = IntegrationTestSuite.getContext().getBean(ResourceOwnerRepository.class);
-        resourceOwnerRepository.insert(ro);
-        return ro;
-    }
-
     @Test
     public void testPostExpectAuthCode() throws Exception {
 
-        Client client = insertClientWithScopes();
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
-        String email = randomEmailAddress();
-        ResourceOwner ro = insertResourceOwner(email);
+        String email = makeRandomEmailAddress.run();
+        ResourceOwner ro = loadResourceOwner.run(email);
 
         String servletURI = this.servletURI +
-                "?client_id=" + client.getUuid().toString() +
-                "&response_type=" + client.getResponseType().toString();
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
-        List<Param> postData = loginFormData(email);
+        List<Param> postData = FormFactory.makeLoginForm(email);
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -228,9 +179,9 @@ public class AuthorizationServletTest {
 
         // location scheme, host, and path
         URI location = new URI(response.getHeader("location"));
-        assertThat(location.getScheme()).isEqualTo(client.getRedirectURI().getScheme());
-        assertThat(location.getHost()).isEqualTo(client.getRedirectURI().getHost());
-        assertThat(location.getPath()).isEqualTo(client.getRedirectURI().getPath());
+        assertThat(location.getScheme()).isEqualTo(confidentialClient.getClient().getRedirectURI().getScheme());
+        assertThat(location.getHost()).isEqualTo(confidentialClient.getClient().getRedirectURI().getHost());
+        assertThat(location.getPath()).isEqualTo(confidentialClient.getClient().getRedirectURI().getPath());
 
         //authorization code.
         QueryStringToMap queryStringToMap = new QueryStringToMapImpl();
@@ -246,18 +197,18 @@ public class AuthorizationServletTest {
     @Test
     public void testPostWithStateExpectAuthCode() throws Exception {
 
-        Client client = insertClientWithScopes();
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
-        String email = randomEmailAddress();
-        ResourceOwner ro = insertResourceOwner(email);
+        String email = makeRandomEmailAddress.run();
+        ResourceOwner ro = loadResourceOwner.run(email);
         String state = "test-state";
 
         String servletURI = this.servletURI +
-                "?client_id=" + client.getUuid().toString() +
-                "&response_type=" + client.getResponseType().toString() +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
                 "&state=" + state;
 
-        List<Param> postData = loginFormData(email);
+        List<Param> postData = FormFactory.makeLoginForm(email);
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -270,9 +221,9 @@ public class AuthorizationServletTest {
 
         // location scheme, host, and path
         URI location = new URI(response.getHeader("location"));
-        assertThat(location.getScheme()).isEqualTo(client.getRedirectURI().getScheme());
-        assertThat(location.getHost()).isEqualTo(client.getRedirectURI().getHost());
-        assertThat(location.getPath()).isEqualTo(client.getRedirectURI().getPath());
+        assertThat(location.getScheme()).isEqualTo(confidentialClient.getClient().getRedirectURI().getScheme());
+        assertThat(location.getHost()).isEqualTo(confidentialClient.getClient().getRedirectURI().getHost());
+        assertThat(location.getPath()).isEqualTo(confidentialClient.getClient().getRedirectURI().getPath());
 
         //authorization code.
         QueryStringToMap queryStringToMap = new QueryStringToMapImpl();

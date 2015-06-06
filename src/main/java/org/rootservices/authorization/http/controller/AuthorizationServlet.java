@@ -1,13 +1,12 @@
 package org.rootservices.authorization.http.controller;
 
 import org.rootservices.authorization.grant.ValidateParams;
-import org.rootservices.authorization.grant.code.authenticate.AuthCodeInput;
-import org.rootservices.authorization.grant.code.authenticate.AuthResponse;
-import org.rootservices.authorization.grant.code.authenticate.RequestAuthCode;
-import org.rootservices.authorization.grant.code.authenticate.exception.UnauthorizedException;
+import org.rootservices.authorization.grant.code.protocol.authorization.AuthCodeInput;
+import org.rootservices.authorization.grant.code.protocol.authorization.AuthResponse;
+import org.rootservices.authorization.grant.code.protocol.authorization.RequestAuthCode;
+import org.rootservices.authorization.authenticate.exception.UnauthorizedException;
 import org.rootservices.authorization.grant.code.exception.InformClientException;
 import org.rootservices.authorization.grant.code.exception.InformResourceOwnerException;
-import org.rootservices.authorization.grant.code.request.AuthRequest;
 import org.rootservices.authorization.http.QueryStringToMap;
 import org.rootservices.authorization.http.QueryStringToMapImpl;
 import org.rootservices.authorization.http.presenter.AuthorizationPresenter;
@@ -36,7 +35,7 @@ public class AuthorizationServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        ApplicationContext context = (ApplicationContext) getServletContext().getAttribute("factory");
         this.queryStringToMap = new QueryStringToMapImpl();
         this.validateParams = context.getBean(ValidateParams.class);
         this.requestAuthCode = context.getBean(RequestAuthCode.class);
