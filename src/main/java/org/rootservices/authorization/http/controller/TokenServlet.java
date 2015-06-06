@@ -8,6 +8,7 @@ import org.rootservices.authorization.exception.BaseInformException;
 import org.rootservices.authorization.grant.code.protocol.token.RequestToken;
 import org.rootservices.authorization.grant.code.protocol.token.TokenRequest;
 import org.rootservices.authorization.grant.code.protocol.token.TokenResponse;
+import org.rootservices.authorization.grant.code.protocol.token.exception.AuthorizationCodeNotFound;
 import org.rootservices.authorization.http.authentication.HttpBasicEntity;
 import org.rootservices.authorization.http.authentication.ParseHttpBasic;
 import org.rootservices.authorization.http.authentication.ParseHttpBasicImpl;
@@ -68,8 +69,9 @@ public class TokenServlet extends HttpServlet {
         } catch(UnauthorizedException e) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
-        } catch (BaseInformException e) {
-            e.printStackTrace();
+        } catch (AuthorizationCodeNotFound e) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
         }
 
         resp.setContentType("application/json;charset=UTF-8");
