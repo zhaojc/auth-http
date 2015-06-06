@@ -140,5 +140,18 @@ public class TokenServletTest {
         assertThat(tokenResponse.getAccessToken()).isNotEmpty();
     }
 
+    @Test
+    public void testGetTokenMissingAuthenticationHeaderExpect401() throws ExecutionException, InterruptedException {
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setHeader("Content-Type", "application/x-www-form-urlencoded")
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(401);
+        assertThat(response.getHeader("WWW-Authenticate")).isEqualTo("Basic");
+    }
 
 }
