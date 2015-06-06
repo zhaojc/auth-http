@@ -51,7 +51,8 @@ public class TokenServlet extends HttpServlet {
         try {
             httpBasicEntity = parseHttpBasic.run(authenticationHeader);
         } catch (HttpBasicException e) {
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.setHeader("WWW-Authenticate", "Basic");
             return;
         }
 
