@@ -12,6 +12,8 @@ import org.junit.experimental.categories.Categories;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.rootservices.authorization.http.controller.AuthorizationServletTest;
+import org.rootservices.authorization.http.controller.TokenServlet;
+import org.rootservices.authorization.http.controller.TokenServletTest;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.net.MalformedURLException;
@@ -24,7 +26,10 @@ import java.net.URISyntaxException;
 @RunWith(Categories.class)
 @Categories.IncludeCategory(ServletContainer.class)
 @Categories.ExcludeCategory(UnitTests.class)
-@Suite.SuiteClasses({AuthorizationServletTest.class})
+@Suite.SuiteClasses({
+        AuthorizationServletTest.class,
+        TokenServletTest.class
+})
 public class IntegrationTestSuite {
 
     private static JettyServer server;
@@ -32,7 +37,6 @@ public class IntegrationTestSuite {
     private static GetCompiledClassesPath getCompiledClassesPath;
     private static GetWebAppPathFromClassesURI getWebAppPathFromClassesURI;
     private static ClassPathXmlApplicationContext context;
-
 
     private static void configureAndStartServletContainer() throws Exception {
         // dependencies to aid configuration of servlet container
