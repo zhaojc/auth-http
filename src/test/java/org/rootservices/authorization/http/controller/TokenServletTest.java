@@ -154,4 +154,33 @@ public class TokenServletTest {
         assertThat(response.getHeader("WWW-Authenticate")).isEqualTo("Basic");
     }
 
+    @Test
+    public void testGetTokenAuthCodeNotFoundExpect404() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+
+        // make the request get token.
+        JsonObject payload = new JsonObject();
+        payload.addProperty("grant_type", "authorization_code");
+        payload.addProperty("code", "invalid-authorization-code");
+        payload.addProperty("redirect_uri", confidentialClient.getClient().getRedirectURI().toString());
+
+        String credentials = confidentialClient.getClient().getUuid().toString() + ":password";
+
+        String encodedCredentials = new String(
+                Base64.getEncoder().encode(credentials.getBytes()),
+                "UTF-8"
+        );
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setHeader("Content-Type", "application/x-www-form-urlencoded")
+                .setHeader("Authorization", "Basic " + encodedCredentials)
+                .setBody(payload.toString())
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(404);
+        assertThat(response.getResponseBody()).isEmpty();
+    }
 }
