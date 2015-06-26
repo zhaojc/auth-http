@@ -1,9 +1,9 @@
 package org.rootservices.authorization.http.controller;
 
-import org.rootservices.authorization.grant.ValidateParams;
-import org.rootservices.authorization.grant.code.protocol.authorization.AuthCodeInput;
-import org.rootservices.authorization.grant.code.protocol.authorization.AuthResponse;
-import org.rootservices.authorization.grant.code.protocol.authorization.RequestAuthCode;
+import org.rootservices.authorization.grant.code.protocol.authorization.ValidateParams;
+import org.rootservices.authorization.grant.code.protocol.authorization.response.AuthCodeInput;
+import org.rootservices.authorization.grant.code.protocol.authorization.response.AuthResponse;
+import org.rootservices.authorization.grant.code.protocol.authorization.response.RequestAuthCode;
 import org.rootservices.authorization.authenticate.exception.UnauthorizedException;
 import org.rootservices.authorization.grant.code.exception.InformClientException;
 import org.rootservices.authorization.grant.code.exception.InformResourceOwnerException;
@@ -11,7 +11,6 @@ import org.rootservices.authorization.http.QueryStringToMap;
 import org.rootservices.authorization.http.QueryStringToMapImpl;
 import org.rootservices.authorization.http.presenter.AuthorizationPresenter;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
