@@ -1,6 +1,6 @@
 package org.rootservices.authorization.http.controller;
 
-import com.google.gson.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Param;
 import com.ning.http.client.Response;
@@ -19,14 +19,17 @@ import org.rootservices.authorization.http.GetServletURI;
 import org.rootservices.authorization.http.GetServletURIImpl;
 import org.rootservices.authorization.http.QueryStringToMap;
 import org.rootservices.authorization.http.QueryStringToMapImpl;
+import org.rootservices.authorization.http.response.TokenError;
 import org.rootservices.authorization.persistence.entity.ConfidentialClient;
 import org.rootservices.authorization.persistence.entity.ResourceOwner;
 import org.rootservices.authorization.security.RandomString;
+import org.rootservices.config.AppConfig;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +82,8 @@ public class TokenServletTest {
         String authorizationServletURI = getServletURI.run(baseURI, AuthorizationServlet.class);
         String servletURI = authorizationServletURI +
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
-                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
+                "&redirect_uri=" + URLEncoder.encode(confidentialClient.getClient().getRedirectURI().toString(), "UTF-8");
 
         List<Param> postData = FormFactory.makeLoginForm(email);
 
@@ -104,11 +108,9 @@ public class TokenServletTest {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
         String authorizationCode = postAuthorizationRequest(confidentialClient);
 
-        // make the request get token.
-        JsonObject payload = new JsonObject();
-        payload.addProperty("grant_type", "authorization_code");
-        payload.addProperty("code", authorizationCode);
-        payload.addProperty("redirect_uri", confidentialClient.getClient().getRedirectURI().toString());
+        String payload = "{\"grant_type\": \"authorization_code\", " +
+            "\"code\": \""+ authorizationCode + "\", " +
+            "\"redirect_uri\": \""+ confidentialClient.getClient().getRedirectURI().toString() + "\"}";
 
         String credentials = confidentialClient.getClient().getUuid().toString() + ":password";
 
@@ -121,7 +123,7 @@ public class TokenServletTest {
                 .preparePost(servletURI)
                 .setHeader("Content-Type", "application/x-www-form-urlencoded")
                 .setHeader("Authorization", "Basic " + encodedCredentials)
-                .setBody(payload.toString())
+                .setBody(payload)
                 .execute();
 
         Response response = f.get();
@@ -131,13 +133,81 @@ public class TokenServletTest {
         assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
         assertThat(response.getHeader("Pragma")).isEqualTo("no-cache");
 
-        Gson jsonMarshal = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+        AppConfig config = new AppConfig();
+        ObjectMapper om = config.objectMapper();
 
-        TokenResponse tokenResponse = jsonMarshal.fromJson(response.getResponseBody(), TokenResponse.class);
+        TokenResponse tokenResponse = om.readValue(response.getResponseBody(), TokenResponse.class);
         assertThat(tokenResponse.getTokenType()).isEqualTo("bearer");
         assertThat(tokenResponse.getExpiresIn()).isEqualTo(3600);
         assertThat(tokenResponse.getAccessToken()).isNotNull();
         assertThat(tokenResponse.getAccessToken()).isNotEmpty();
+    }
+
+    @Test
+    public void testGetTokenRedirectUriIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        String authorizationCode = postAuthorizationRequest(confidentialClient);
+
+        String payload = "{\"grant_type\": \"authorization_code\", " +
+                "\"redirect_uri\": \""+ confidentialClient.getClient().getRedirectURI().toString() + "\"}";
+
+        String credentials = confidentialClient.getClient().getUuid().toString() + ":password";
+
+        String encodedCredentials = new String(
+                Base64.getEncoder().encode(credentials.getBytes()),
+                "UTF-8"
+        );
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setHeader("Content-Type", "application/x-www-form-urlencoded")
+                .setHeader("Authorization", "Basic " + encodedCredentials)
+                .setBody(payload)
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(400);
+        assertThat(response.getContentType()).isEqualTo("application/json;charset=UTF-8");
+        assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
+        assertThat(response.getHeader("Pragma")).isEqualTo("no-cache");
+
+        AppConfig config = new AppConfig();
+        ObjectMapper om = config.objectMapper();
+
+        TokenError tokenError = om.readValue(response.getResponseBody(), TokenError.class);
+        assertThat(tokenError.getError()).isEqualTo("invalid_request");
+        assertThat(tokenError.getDescription()).isEqualTo("code is a required field");
+    }
+
+    @Test
+    public void testGetTokenCodeIsMissingExpect404() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        String authorizationCode = postAuthorizationRequest(confidentialClient);
+
+        String payload = "{\"grant_type\": \"authorization_code\", " +
+                "\"code\": \""+ authorizationCode + "\"}";
+
+        String credentials = confidentialClient.getClient().getUuid().toString() + ":password";
+
+        String encodedCredentials = new String(
+                Base64.getEncoder().encode(credentials.getBytes()),
+                "UTF-8"
+        );
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setHeader("Content-Type", "application/x-www-form-urlencoded")
+                .setHeader("Authorization", "Basic " + encodedCredentials)
+                .setBody(payload)
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(404);
+        assertThat(response.getContentType()).isEqualTo("application/json;charset=UTF-8");
+        assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
+        assertThat(response.getHeader("Pragma")).isEqualTo("no-cache");
     }
 
     @Test
@@ -158,11 +228,9 @@ public class TokenServletTest {
     public void testGetTokenAuthCodeNotFoundExpect404() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
-        // make the request get token.
-        JsonObject payload = new JsonObject();
-        payload.addProperty("grant_type", "authorization_code");
-        payload.addProperty("code", "invalid-authorization-code");
-        payload.addProperty("redirect_uri", confidentialClient.getClient().getRedirectURI().toString());
+        String payload = "{\"grant_type\": \"authorization_code\", " +
+                "\"code\": \"invalid-authorization-code\", " +
+                "\"redirect_uri\": \""+ confidentialClient.getClient().getRedirectURI().toString() + "\"}";
 
         String credentials = confidentialClient.getClient().getUuid().toString() + ":password";
 
