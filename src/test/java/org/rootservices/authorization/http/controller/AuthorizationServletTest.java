@@ -24,6 +24,7 @@ import org.rootservices.authorization.security.RandomString;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -92,6 +93,20 @@ public class AuthorizationServletTest {
         String servletURI = this.servletURI +
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
+        Response response = f.get();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+    }
+
+    @Test
+    public void testGetExpect200RedirectUri() throws Exception {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+
+        String servletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
+                "&redirect_uri=" + URLEncoder.encode(confidentialClient.getClient().getRedirectURI().toString(), "UTF-8");
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
         Response response = f.get();

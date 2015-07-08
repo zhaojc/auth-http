@@ -1,18 +1,18 @@
 package org.rootservices.authorization.http.controller;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.rootservices.authorization.authenticate.exception.UnauthorizedException;
-import org.rootservices.authorization.exception.BaseInformException;
+import org.rootservices.authorization.constant.ErrorCode;
 import org.rootservices.authorization.grant.code.protocol.token.RequestToken;
-import org.rootservices.authorization.grant.code.protocol.token.TokenRequest;
+import org.rootservices.authorization.grant.code.protocol.token.TokenInput;
 import org.rootservices.authorization.grant.code.protocol.token.TokenResponse;
 import org.rootservices.authorization.grant.code.protocol.token.exception.AuthorizationCodeNotFound;
+import org.rootservices.authorization.grant.code.protocol.token.exception.BadRequestException;
 import org.rootservices.authorization.http.authentication.HttpBasicEntity;
 import org.rootservices.authorization.http.authentication.ParseHttpBasic;
 import org.rootservices.authorization.http.authentication.ParseHttpBasicImpl;
 import org.rootservices.authorization.http.authentication.exception.HttpBasicException;
+import org.rootservices.authorization.http.response.TokenError;
 import org.springframework.context.ApplicationContext;
 
 
@@ -21,9 +21,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Optional;
 
 
 /**
@@ -33,15 +31,14 @@ import java.util.Optional;
 public class TokenServlet extends HttpServlet {
     private RequestToken requestToken;
     private ParseHttpBasic parseHttpBasic;
-    private Gson jsonMarsal;
-
+    private ObjectMapper objectMapper;
 
     @Override
     public void init() throws ServletException {
         ApplicationContext context = (ApplicationContext) getServletContext().getAttribute("factory");
         requestToken = context.getBean(RequestToken.class);
         parseHttpBasic = new ParseHttpBasicImpl();
-        jsonMarsal = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+        objectMapper = context.getBean(ObjectMapper.class);
     }
 
     @Override
@@ -57,28 +54,41 @@ public class TokenServlet extends HttpServlet {
             return;
         }
 
-        BufferedReader reader = req.getReader();
-        TokenRequest tokenRequest = jsonMarsal.fromJson(reader, TokenRequest.class);
-
-        tokenRequest.setClientUUID(httpBasicEntity.getUser());
-        tokenRequest.setClientPassword(httpBasicEntity.getPassword());
+        TokenInput tokenInput = new TokenInput();
+        tokenInput.setClientUUID(httpBasicEntity.getUser());
+        tokenInput.setClientPassword(httpBasicEntity.getPassword());
+        tokenInput.setPayload(req.getReader());
 
         TokenResponse tokenResponse = null;
         try {
-            tokenResponse = requestToken.run(tokenRequest);
+            tokenResponse = requestToken.run(tokenInput);
         } catch(UnauthorizedException e) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            setResponseHeaders(resp);
             return;
         } catch (AuthorizationCodeNotFound e) {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            setResponseHeaders(resp);
+            return;
+        } catch (BadRequestException e) {
+            TokenError tokenError = new TokenError();
+            tokenError.setError(e.getError());
+            tokenError.setDescription(e.getDescription());
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            setResponseHeaders(resp);
+            resp.getWriter().write(objectMapper.writeValueAsString(tokenError));
             return;
         }
 
+        setResponseHeaders(resp);
+        resp.getWriter().write(objectMapper.writeValueAsString(tokenResponse));
+        return;
+    }
+
+    private void setResponseHeaders(HttpServletResponse resp) {
         resp.setContentType("application/json;charset=UTF-8");
         resp.setHeader("Cache-Control", "no-store");
         resp.setHeader("Pragma", "no-cache");
-        resp.getWriter().write(jsonMarsal.toJson(tokenResponse));
-        return;
     }
 }
 
