@@ -3,9 +3,17 @@ package org.rootservices.authorization.http.response;
 /**
  * Created by tommackenzie on 7/8/15.
  */
-public class TokenError {
+public class Error {
     private String error;
     private String description;
+
+    public Error() {
+    }
+
+    public Error(String error, String description) {
+        this.error = error;
+        this.description = description;
+    }
 
     public String getError() {
         return error;

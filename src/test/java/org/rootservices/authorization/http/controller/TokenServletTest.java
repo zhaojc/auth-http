@@ -19,7 +19,7 @@ import org.rootservices.authorization.http.GetServletURI;
 import org.rootservices.authorization.http.GetServletURIImpl;
 import org.rootservices.authorization.http.QueryStringToMap;
 import org.rootservices.authorization.http.QueryStringToMapImpl;
-import org.rootservices.authorization.http.response.TokenError;
+import org.rootservices.authorization.http.response.Error;
 import org.rootservices.authorization.persistence.entity.ConfidentialClient;
 import org.rootservices.authorization.persistence.entity.ResourceOwner;
 import org.rootservices.authorization.security.RandomString;
@@ -175,9 +175,9 @@ public class TokenServletTest {
         AppConfig config = new AppConfig();
         ObjectMapper om = config.objectMapper();
 
-        TokenError tokenError = om.readValue(response.getResponseBody(), TokenError.class);
-        assertThat(tokenError.getError()).isEqualTo("invalid_request");
-        assertThat(tokenError.getDescription()).isEqualTo("code is a required field");
+        Error error = om.readValue(response.getResponseBody(), Error.class);
+        assertThat(error.getError()).isEqualTo("invalid_request");
+        assertThat(error.getDescription()).isEqualTo("code is a required field");
     }
 
     @Test
@@ -211,7 +211,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenMissingAuthenticationHeaderExpect401() throws ExecutionException, InterruptedException {
+    public void testGetTokenMissingAuthenticationHeaderExpect401() throws ExecutionException, InterruptedException, IOException {
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -221,7 +221,57 @@ public class TokenServletTest {
         Response response = f.get();
 
         assertThat(response.getStatusCode()).isEqualTo(401);
+        assertThat(response.getContentType()).isEqualTo("application/json;charset=UTF-8");
+        assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
+        assertThat(response.getHeader("Pragma")).isEqualTo("no-cache");
         assertThat(response.getHeader("WWW-Authenticate")).isEqualTo("Basic");
+
+        AppConfig config = new AppConfig();
+        ObjectMapper om = config.objectMapper();
+
+        Error error = om.readValue(response.getResponseBody(), Error.class);
+        assertThat(error.getError()).isEqualTo("invalid_client");
+        assertThat(error.getDescription()).isEqualTo(null);
+
+    }
+
+    @Test
+    public void testGetTokenAuthenticationFailsWrongPasswordExpect401() throws ExecutionException, InterruptedException, IOException, URISyntaxException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        String authorizationCode = postAuthorizationRequest(confidentialClient);
+
+        String payload = "{\"grant_type\": \"authorization_code\", " +
+                "\"code\": \""+ authorizationCode + "\", " +
+                "\"redirect_uri\": \""+ confidentialClient.getClient().getRedirectURI().toString() + "\"}";
+
+        String credentials = confidentialClient.getClient().getUuid().toString() + ":wrong-password";
+
+        String encodedCredentials = new String(
+                Base64.getEncoder().encode(credentials.getBytes()),
+                "UTF-8"
+        );
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setHeader("Content-Type", "application/x-www-form-urlencoded")
+                .setHeader("Authorization", "Basic " + encodedCredentials)
+                .setBody(payload)
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(401);
+        assertThat(response.getContentType()).isEqualTo("application/json;charset=UTF-8");
+        assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
+        assertThat(response.getHeader("Pragma")).isEqualTo("no-cache");
+        assertThat(response.getHeader("WWW-Authenticate")).isEqualTo("Basic");
+
+        AppConfig config = new AppConfig();
+        ObjectMapper om = config.objectMapper();
+
+        Error error = om.readValue(response.getResponseBody(), Error.class);
+        assertThat(error.getError()).isEqualTo("invalid_client");
+        assertThat(error.getDescription()).isEqualTo(null);
     }
 
     @Test
