@@ -2,7 +2,6 @@ package org.rootservices.authorization.http.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.rootservices.authorization.authenticate.exception.UnauthorizedException;
-import org.rootservices.authorization.constant.ErrorCode;
 import org.rootservices.authorization.grant.code.protocol.token.RequestToken;
 import org.rootservices.authorization.grant.code.protocol.token.TokenInput;
 import org.rootservices.authorization.grant.code.protocol.token.TokenResponse;
@@ -12,7 +11,7 @@ import org.rootservices.authorization.http.authentication.HttpBasicEntity;
 import org.rootservices.authorization.http.authentication.ParseHttpBasic;
 import org.rootservices.authorization.http.authentication.ParseHttpBasicImpl;
 import org.rootservices.authorization.http.authentication.exception.HttpBasicException;
-import org.rootservices.authorization.http.response.TokenError;
+import org.rootservices.authorization.http.response.Error;
 import org.springframework.context.ApplicationContext;
 
 
@@ -49,8 +48,11 @@ public class TokenServlet extends HttpServlet {
         try {
             httpBasicEntity = parseHttpBasic.run(authenticationHeader);
         } catch (HttpBasicException e) {
+            Error error = new Error("invalid_client", null);
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             resp.setHeader("WWW-Authenticate", "Basic");
+            setResponseHeaders(resp);
+            resp.getWriter().write(objectMapper.writeValueAsString(error));
             return;
         }
 
@@ -63,20 +65,23 @@ public class TokenServlet extends HttpServlet {
         try {
             tokenResponse = requestToken.run(tokenInput);
         } catch(UnauthorizedException e) {
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            Error error = new Error("invalid_client", null);
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.setHeader("WWW-Authenticate", "Basic");
             setResponseHeaders(resp);
+            resp.getWriter().write(objectMapper.writeValueAsString(error));
             return;
         } catch (AuthorizationCodeNotFound e) {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             setResponseHeaders(resp);
             return;
         } catch (BadRequestException e) {
-            TokenError tokenError = new TokenError();
-            tokenError.setError(e.getError());
-            tokenError.setDescription(e.getDescription());
+            Error error = new Error();
+            error.setError(e.getError());
+            error.setDescription(e.getDescription());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             setResponseHeaders(resp);
-            resp.getWriter().write(objectMapper.writeValueAsString(tokenError));
+            resp.getWriter().write(objectMapper.writeValueAsString(error));
             return;
         }
 
