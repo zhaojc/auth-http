@@ -72,13 +72,13 @@ public class TokenServlet extends HttpServlet {
             resp.getWriter().write(objectMapper.writeValueAsString(error));
             return;
         } catch (AuthorizationCodeNotFound e) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            Error error = new Error(e.getError(), null);
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             setResponseHeaders(resp);
+            resp.getWriter().write(objectMapper.writeValueAsString(error));
             return;
         } catch (BadRequestException e) {
-            Error error = new Error();
-            error.setError(e.getError());
-            error.setDescription(e.getDescription());
+            Error error = new Error(e.getError(), e.getDescription());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             setResponseHeaders(resp);
             resp.getWriter().write(objectMapper.writeValueAsString(error));

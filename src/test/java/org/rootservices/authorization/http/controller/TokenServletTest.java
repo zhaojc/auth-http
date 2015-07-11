@@ -144,7 +144,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenRedirectUriIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+    public void testGetTokenCodeIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
         String authorizationCode = postAuthorizationRequest(confidentialClient);
 
@@ -181,7 +181,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenCodeIsMissingExpect404() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+    public void testGetTokenRedirectUriIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
         String authorizationCode = postAuthorizationRequest(confidentialClient);
 
@@ -204,10 +204,17 @@ public class TokenServletTest {
 
         Response response = f.get();
 
-        assertThat(response.getStatusCode()).isEqualTo(404);
+        assertThat(response.getStatusCode()).isEqualTo(400);
         assertThat(response.getContentType()).isEqualTo("application/json;charset=UTF-8");
         assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
         assertThat(response.getHeader("Pragma")).isEqualTo("no-cache");
+
+        AppConfig config = new AppConfig();
+        ObjectMapper om = config.objectMapper();
+
+        Error error = om.readValue(response.getResponseBody(), Error.class);
+        assertThat(error.getError()).isEqualTo("invalid_grant");
+        assertThat(error.getDescription()).isEqualTo(null);
     }
 
     @Test
@@ -275,7 +282,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenAuthCodeNotFoundExpect404() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+    public void testGetTokenAuthCodeNotFoundExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
         String payload = "{\"grant_type\": \"authorization_code\", " +
@@ -298,7 +305,13 @@ public class TokenServletTest {
 
         Response response = f.get();
 
-        assertThat(response.getStatusCode()).isEqualTo(404);
-        assertThat(response.getResponseBody()).isEmpty();
+        assertThat(response.getStatusCode()).isEqualTo(400);
+
+        AppConfig config = new AppConfig();
+        ObjectMapper om = config.objectMapper();
+
+        Error error = om.readValue(response.getResponseBody(), Error.class);
+        assertThat(error.getError()).isEqualTo("invalid_grant");
+        assertThat(error.getDescription()).isEqualTo(null);
     }
 }
