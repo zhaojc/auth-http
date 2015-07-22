@@ -37,4 +37,8 @@ public class FactoryForPersistence {
 
         return loadResourceOwner;
     }
+
+    public PostAuthorizationForm makePostAuthorizationForm() {
+        return new PostAuthorizationForm(IntegrationTestSuite.getHttpClient(), makeLoadResourceOwner());
+    }
 }
