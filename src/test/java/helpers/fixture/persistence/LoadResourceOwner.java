@@ -19,10 +19,10 @@ public class LoadResourceOwner {
         this.resourceOwnerRepository = resourceOwnerRepository;
     }
 
-    public ResourceOwner run(String email) {
+    public ResourceOwner run() {
         ResourceOwner ro = new ResourceOwner();
         ro.setUuid(UUID.randomUUID());
-        ro.setEmail(email);
+        ro.setEmail("test-" + UUID.randomUUID().toString() + "@rootservices.org");
 
         String hashedPassword = textHasher.run("password");
         ro.setPassword(hashedPassword.getBytes());

@@ -4,7 +4,6 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Param;
 import helpers.category.ServletContainer;
 import helpers.fixture.FormFactory;
-import helpers.fixture.MakeRandomEmailAddress;
 import helpers.fixture.persistence.FactoryForPersistence;
 import helpers.fixture.persistence.LoadConfidentialClientWithScopes;
 import helpers.fixture.persistence.LoadResourceOwner;
@@ -38,7 +37,6 @@ public class AuthorizationServletTest {
 
     private static LoadConfidentialClientWithScopes loadConfidentialClientWithScopes;
     private static RandomString randomString;
-    private static MakeRandomEmailAddress makeRandomEmailAddress;
     private static LoadResourceOwner loadResourceOwner;
 
     protected static Class ServletClass = AuthorizationServlet.class;
@@ -53,11 +51,6 @@ public class AuthorizationServletTest {
         );
 
         loadConfidentialClientWithScopes = factoryForPersistence.makeLoadConfidentialClientWithScopes();
-
-        // resource owner email address.
-        randomString = IntegrationTestSuite.getContext().getBean(RandomString.class);
-        makeRandomEmailAddress = new MakeRandomEmailAddress(randomString);
-
         loadResourceOwner = factoryForPersistence.makeLoadResourceOwner();
 
         GetServletURI getServletURI = new GetServletURIImpl();
@@ -174,14 +167,13 @@ public class AuthorizationServletTest {
 
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
-        String email = makeRandomEmailAddress.run();
-        ResourceOwner ro = loadResourceOwner.run(email);
+        ResourceOwner ro = loadResourceOwner.run();
 
         String servletURI = this.servletURI +
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
-        List<Param> postData = FormFactory.makeLoginForm(email);
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail());
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -214,8 +206,7 @@ public class AuthorizationServletTest {
 
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
-        String email = makeRandomEmailAddress.run();
-        ResourceOwner ro = loadResourceOwner.run(email);
+        ResourceOwner ro = loadResourceOwner.run();
         String state = "test-state";
 
         String servletURI = this.servletURI +
@@ -223,7 +214,7 @@ public class AuthorizationServletTest {
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
                 "&state=" + state;
 
-        List<Param> postData = FormFactory.makeLoginForm(email);
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail());
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)

@@ -1,6 +1,7 @@
 package org.rootservices.authorization.http.controller;
 
 import org.rootservices.authorization.grant.code.protocol.authorization.ValidateParams;
+import org.rootservices.authorization.grant.code.protocol.authorization.exception.AuthCodeInsertException;
 import org.rootservices.authorization.grant.code.protocol.authorization.response.AuthCodeInput;
 import org.rootservices.authorization.grant.code.protocol.authorization.response.AuthResponse;
 import org.rootservices.authorization.grant.code.protocol.authorization.response.RequestAuthCode;
@@ -107,6 +108,8 @@ public class AuthorizationServlet extends HttpServlet {
             String location = e.getRedirectURI() + "?error=" + e.getError();
             resp.sendRedirect(location);
             return;
+        } catch (AuthCodeInsertException e) {
+            // TODO: pt-99407544 - add logger or notify
         }
 
         resp.setContentType("application/x-www-form-urlencoded");

@@ -7,6 +7,7 @@ import org.rootservices.authorization.grant.code.protocol.token.TokenInput;
 import org.rootservices.authorization.grant.code.protocol.token.TokenResponse;
 import org.rootservices.authorization.grant.code.protocol.token.exception.AuthorizationCodeNotFound;
 import org.rootservices.authorization.grant.code.protocol.token.exception.BadRequestException;
+import org.rootservices.authorization.grant.code.protocol.token.exception.CompromisedCodeException;
 import org.rootservices.authorization.http.authentication.HttpBasicEntity;
 import org.rootservices.authorization.http.authentication.ParseHttpBasic;
 import org.rootservices.authorization.http.authentication.ParseHttpBasicImpl;
@@ -83,6 +84,11 @@ public class TokenServlet extends HttpServlet {
             setResponseHeaders(resp);
             resp.getWriter().write(objectMapper.writeValueAsString(error));
             return;
+        } catch (CompromisedCodeException e) {
+            Error error = new Error(e.getError(), null);
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            setResponseHeaders(resp);
+            resp.getWriter().write(objectMapper.writeValueAsString(error));
         }
 
         setResponseHeaders(resp);
