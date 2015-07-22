@@ -1,8 +1,10 @@
 package helpers.fixture.persistence;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import helpers.suite.IntegrationTestSuite;
 import org.rootservices.authorization.persistence.repository.*;
 import org.rootservices.authorization.security.HashTextRandomSalt;
+import org.rootservices.config.AppConfig;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
@@ -40,5 +42,13 @@ public class FactoryForPersistence {
 
     public PostAuthorizationForm makePostAuthorizationForm() {
         return new PostAuthorizationForm(IntegrationTestSuite.getHttpClient(), makeLoadResourceOwner());
+    }
+
+    public GetToken makeGetToken() {
+        AppConfig config = new AppConfig();
+        return new GetToken(
+                IntegrationTestSuite.getHttpClient(),
+                config.objectMapper()
+        );
     }
 }

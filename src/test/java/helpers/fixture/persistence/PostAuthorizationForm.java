@@ -44,7 +44,7 @@ public class PostAuthorizationForm {
 
         List<Param> postData = FormFactory.makeLoginForm(ro.getEmail());
 
-        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+        ListenableFuture<Response> f = httpDriver
                 .preparePost(servletURI)
                 .setFormParams(postData)
                 .execute();

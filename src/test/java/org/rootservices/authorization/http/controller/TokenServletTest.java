@@ -6,6 +6,7 @@ import com.ning.http.client.Param;
 import com.ning.http.client.Response;
 import helpers.category.ServletContainer;
 import helpers.fixture.FormFactory;
+import helpers.fixture.persistence.GetToken;
 import helpers.fixture.persistence.PostAuthorizationForm;
 import helpers.fixture.persistence.FactoryForPersistence;
 import helpers.fixture.persistence.LoadConfidentialClientWithScopes;
@@ -44,6 +45,7 @@ public class TokenServletTest {
 
     private static LoadConfidentialClientWithScopes loadConfidentialClientWithScopes;
     private static PostAuthorizationForm postAuthorizationForm;
+    private static GetToken getToken;
     protected static Class ServletClass = TokenServlet.class;
     protected static String baseURI = String.valueOf(IntegrationTestSuite.getServer().getURI());
     protected static GetServletURI getServletURI;
@@ -62,6 +64,7 @@ public class TokenServletTest {
         servletURI = getServletURI.run(baseURI, ServletClass);
         authServletURI = getServletURI.run(baseURI, AuthorizationServlet.class);
         postAuthorizationForm = factoryForPersistence.makePostAuthorizationForm();
+        getToken = factoryForPersistence.makeGetToken();
     }
 
     @Test
@@ -276,5 +279,45 @@ public class TokenServletTest {
         assertThat(error.getDescription()).isEqualTo(null);
     }
 
-    // left off here. need a compromised code test
+    @Test
+    public void testGetTokenCodeIsCompromisedExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+
+        // generate a token with a auth code.
+        String authorizationCode = postAuthorizationForm.run(confidentialClient, authServletURI);
+        TokenResponse tokenResponse = getToken.run(confidentialClient, authServletURI, servletURI, authorizationCode);
+
+        // attempt to use the auth code a second time.
+        String payload = "{\"grant_type\": \"authorization_code\", " +
+                "\"code\": \"" + authorizationCode + "\", " +
+                "\"redirect_uri\": \"" + confidentialClient.getClient().getRedirectURI().toString() + "\"}";
+
+        String credentials = confidentialClient.getClient().getUuid().toString() + ":password";
+
+        String encodedCredentials = new String(
+                Base64.getEncoder().encode(credentials.getBytes()),
+                "UTF-8"
+        );
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setHeader("Content-Type", "application/x-www-form-urlencoded")
+                .setHeader("Authorization", "Basic " + encodedCredentials)
+                .setBody(payload)
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(400);
+        assertThat(response.getContentType()).isEqualTo("application/json;charset=UTF-8");
+        assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
+        assertThat(response.getHeader("Pragma")).isEqualTo("no-cache");
+
+        AppConfig config = new AppConfig();
+        ObjectMapper om = config.objectMapper();
+
+        Error error = om.readValue(response.getResponseBody(), Error.class);
+        assertThat(error.getError()).isEqualTo("invalid_grant");
+        assertThat(error.getDescription()).isEqualTo(null);
+    }
 }
