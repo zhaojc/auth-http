@@ -5,18 +5,17 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Param;
 import com.ning.http.client.Response;
 import helpers.fixture.FormFactory;
-import helpers.fixture.persistence.LoadResourceOwner;
-import helpers.suite.IntegrationTestSuite;
-import org.rootservices.authorization.http.QueryStringToMap;
-import org.rootservices.authorization.http.QueryStringToMapImpl;
-import org.rootservices.authorization.http.controller.AuthorizationServlet;
+import org.rootservices.otter.QueryStringToMap;
+import org.rootservices.otter.QueryStringToMapImpl;
 import org.rootservices.authorization.persistence.entity.ConfidentialClient;
 import org.rootservices.authorization.persistence.entity.ResourceOwner;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,13 +27,15 @@ import java.util.concurrent.ExecutionException;
 public class PostAuthorizationForm {
     private AsyncHttpClient httpDriver;
     private LoadResourceOwner loadResourceOwner;
+    private GetSessionAndCsrfToken getSessionAndCsrfToken;
 
-    public PostAuthorizationForm(AsyncHttpClient httpDriver, LoadResourceOwner loadResourceOwner) {
+    public PostAuthorizationForm(AsyncHttpClient httpDriver, LoadResourceOwner loadResourceOwner, GetSessionAndCsrfToken getSessionAndCsrfToken) {
         this.httpDriver = httpDriver;
         this.loadResourceOwner = loadResourceOwner;
+        this.getSessionAndCsrfToken = getSessionAndCsrfToken;
     }
 
-    public String run(ConfidentialClient confidentialClient, String baseURI) throws UnsupportedEncodingException, ExecutionException, InterruptedException, URISyntaxException {
+    public String run(ConfidentialClient confidentialClient, String baseURI) throws IOException, ExecutionException, InterruptedException, URISyntaxException {
         ResourceOwner ro = loadResourceOwner.run();
 
         String servletURI = baseURI +
@@ -42,11 +43,13 @@ public class PostAuthorizationForm {
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
                 "&redirect_uri=" + URLEncoder.encode(confidentialClient.getClient().getRedirectURI().toString(), "UTF-8");
 
-        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail());
+        Session session = getSessionAndCsrfToken.run(servletURI);
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), session.getCsrfToken());
 
         ListenableFuture<Response> f = httpDriver
                 .preparePost(servletURI)
                 .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
                 .execute();
 
         Response response = f.get();

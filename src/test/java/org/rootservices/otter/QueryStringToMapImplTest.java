@@ -1,9 +1,11 @@
-package org.rootservices.authorization.http;
+package org.rootservices.otter;
 
 import helpers.category.UnitTests;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.rootservices.otter.QueryStringToMap;
+import org.rootservices.otter.QueryStringToMapImpl;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

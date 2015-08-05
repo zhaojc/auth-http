@@ -10,12 +10,14 @@ import java.util.List;
  */
 public class FormFactory {
 
-    public static List<Param> makeLoginForm(String email) {
+    public static List<Param> makeLoginForm(String email, String csrfToken) {
         Param userName = new Param("email", email);
         Param password = new Param("password", "password");
+        Param csrfParam = new Param("csrfToken", csrfToken);
         List<Param> postData = new ArrayList<>();
         postData.add(userName);
         postData.add(password);
+        postData.add(csrfParam);
 
         return postData;
     }

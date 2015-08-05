@@ -1,14 +1,12 @@
-package org.rootservices.authorization.http.authentication;
+package org.rootservices.otter.authentication;
 
 import helpers.category.UnitTests;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.rootservices.authorization.http.authentication.exception.HttpBasicException;
-import sun.misc.BASE64Encoder;
+import org.rootservices.otter.authentication.exception.HttpBasicException;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Base64;
 
 import static org.fest.assertions.api.Assertions.assertThat;

@@ -1,10 +1,8 @@
-package org.rootservices.authorization.http.authentication;
+package org.rootservices.otter.authentication;
 
-import org.rootservices.authorization.http.authentication.exception.HttpBasicException;
+import org.rootservices.otter.authentication.exception.HttpBasicException;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.Base64;
 
 /**

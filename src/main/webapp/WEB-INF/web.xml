@@ -10,5 +10,12 @@
         <error-code>404</error-code>
         <location>/notFound</location>
     </error-page>
-
+    <filter>
+        <filter-name>CsrfPrevention</filter-name>
+        <filter-class>org.rootservices.otter.security.csrf.synchronizerToken.filter.CsrfPreventionFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CsrfPrevention</filter-name>
+        <servlet-name>authorizationServlet</servlet-name>
+    </filter-mapping>
 </web-app>

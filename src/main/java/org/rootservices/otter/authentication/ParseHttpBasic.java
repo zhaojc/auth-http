@@ -1,6 +1,6 @@
-package org.rootservices.authorization.http.authentication;
+package org.rootservices.otter.authentication;
 
-import org.rootservices.authorization.http.authentication.exception.HttpBasicException;
+import org.rootservices.otter.authentication.exception.HttpBasicException;
 
 /**
  * Created by tommackenzie on 6/4/15.

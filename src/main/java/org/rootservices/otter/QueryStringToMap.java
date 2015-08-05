@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http;
+package org.rootservices.otter;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;

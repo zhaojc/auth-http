@@ -6,6 +6,7 @@ package org.rootservices.authorization.http.presenter;
 public class AuthorizationPresenter {
 
     private String email;
+    private String csrfToken;
 
     public void setEmail(String email) {
         this.email = email;
@@ -13,5 +14,13 @@ public class AuthorizationPresenter {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getCsrfToken() {
+        return csrfToken;
+    }
+
+    public void setCsrfToken(String csrfToken) {
+        this.csrfToken = csrfToken;
     }
 }

@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http;
+package org.rootservices.otter.router;
 
 /**
  * Created by tommackenzie on 5/2/15.
