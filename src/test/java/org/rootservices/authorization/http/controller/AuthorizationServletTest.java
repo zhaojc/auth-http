@@ -112,7 +112,52 @@ public class AuthorizationServletTest {
     }
 
     @Test
-    public void testPostExpect403() throws URISyntaxException, ExecutionException, InterruptedException, IOException {
+    public void testPostWhenNoSessionAndWrongCsrfTokenExpectCsrfFailureAnd403() throws URISyntaxException, ExecutionException, InterruptedException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        ResourceOwner ro = loadResourceOwner.run();
+
+        String servletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), "foo");
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setFormParams(postData)
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(403);
+    }
+
+    @Test
+    public void testPostWhenWrongCsrfTokenExpectCsrfFailureAnd403() throws URISyntaxException, ExecutionException, InterruptedException, IOException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        ResourceOwner ro = loadResourceOwner.run();
+
+        String servletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+
+        Session session = getSessionAndCsrfToken.run(servletURI);
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), "foo");
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(403);
+    }
+
+
+    @Test
+    public void testPostWhenResourceOwnerFailsAuthenticationExpect403() throws URISyntaxException, ExecutionException, InterruptedException, IOException {
 
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
@@ -121,7 +166,7 @@ public class AuthorizationServletTest {
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
         Session session = getSessionAndCsrfToken.run(servletURI);
-        List<Param> postData = FormFactory.makeLoginForm("test@rootservices.org", session.getCsrfToken());
+        List<Param> postData = FormFactory.makeLoginForm("unknown-user@rootservices.org", session.getCsrfToken());
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -138,15 +183,15 @@ public class AuthorizationServletTest {
 
         // get a session and valid csrf.
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
-        String validServletURI = this.servletURI +
+        String serletURI = this.servletURI +
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
-        Session session = getSessionAndCsrfToken.run(validServletURI);
+        Session session = getSessionAndCsrfToken.run(serletURI);
 
         ResourceOwner ro = loadResourceOwner.run();
         List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), session.getCsrfToken());
 
-        // make the request with missing url parameters.
+
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
                 .setFormParams(postData)
