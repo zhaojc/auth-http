@@ -5,6 +5,8 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Base64;
 import java.util.Optional;
 
 /**
@@ -61,8 +63,16 @@ public class CsrfPreventionFilter implements Filter {
         request.getSession().setAttribute(CHALLENGE_TOKEN_SESSION_NAME, "challenge-token");
     }
 
-    private Optional<String> getFormChallengeToken(HttpServletRequest request) {
-        return Optional.ofNullable(request.getParameter(CHALLENGE_TOKEN_FORM_NAME));
+    private Optional<String> getFormChallengeToken(HttpServletRequest request) throws UnsupportedEncodingException {
+        String decodedFormChallengeToken = null;
+        Optional<String> encodedFormChallengeToken = Optional.ofNullable(request.getParameter(CHALLENGE_TOKEN_FORM_NAME));
+
+        if (encodedFormChallengeToken.isPresent()) {
+            byte[] decodedChallengeToken = Base64.getDecoder().decode(encodedFormChallengeToken.get());
+            decodedFormChallengeToken = new String(decodedChallengeToken, "UTF-8");
+        }
+
+        return Optional.ofNullable(decodedFormChallengeToken);
     }
 
     @Override
