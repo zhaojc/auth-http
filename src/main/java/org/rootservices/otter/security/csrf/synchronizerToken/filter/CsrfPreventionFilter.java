@@ -1,6 +1,9 @@
 package org.rootservices.otter.security.csrf.synchronizerToken.filter;
 
 
+import org.rootservices.authorization.security.RandomString;
+import org.rootservices.otter.security.RandomStringImpl;
+
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,10 +24,12 @@ public class CsrfPreventionFilter implements Filter {
     private final String CHALLENGE_TOKEN_FORM_NAME = "csrfToken";
 
     private FilterConfig filterConfig;
+    private RandomString randomString;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
+        this.randomString = new RandomStringImpl();
     }
 
     @Override
@@ -60,7 +65,7 @@ public class CsrfPreventionFilter implements Filter {
     }
 
     private void insertSessionChallengeToken(HttpServletRequest request) {
-        request.getSession().setAttribute(CHALLENGE_TOKEN_SESSION_NAME, "challenge-token");
+        request.getSession().setAttribute(CHALLENGE_TOKEN_SESSION_NAME, randomString.run());
     }
 
     private Optional<String> getFormChallengeToken(HttpServletRequest request) throws UnsupportedEncodingException {
