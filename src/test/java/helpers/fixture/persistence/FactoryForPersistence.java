@@ -40,8 +40,16 @@ public class FactoryForPersistence {
         return loadResourceOwner;
     }
 
+    public GetSessionAndCsrfToken makeGetSessionAndCsrfToken() {
+        return new GetSessionAndCsrfToken(IntegrationTestSuite.getHttpClient());
+    }
+
     public PostAuthorizationForm makePostAuthorizationForm() {
-        return new PostAuthorizationForm(IntegrationTestSuite.getHttpClient(), makeLoadResourceOwner());
+        return new PostAuthorizationForm(
+                IntegrationTestSuite.getHttpClient(),
+                makeLoadResourceOwner(),
+                makeGetSessionAndCsrfToken()
+        );
     }
 
     public GetToken makeGetToken() {

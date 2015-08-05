@@ -8,10 +8,10 @@ import org.rootservices.authorization.grant.code.protocol.token.TokenResponse;
 import org.rootservices.authorization.grant.code.protocol.token.exception.AuthorizationCodeNotFound;
 import org.rootservices.authorization.grant.code.protocol.token.exception.BadRequestException;
 import org.rootservices.authorization.grant.code.protocol.token.exception.CompromisedCodeException;
-import org.rootservices.authorization.http.authentication.HttpBasicEntity;
-import org.rootservices.authorization.http.authentication.ParseHttpBasic;
-import org.rootservices.authorization.http.authentication.ParseHttpBasicImpl;
-import org.rootservices.authorization.http.authentication.exception.HttpBasicException;
+import org.rootservices.otter.authentication.HttpBasicEntity;
+import org.rootservices.otter.authentication.ParseHttpBasic;
+import org.rootservices.otter.authentication.ParseHttpBasicImpl;
+import org.rootservices.otter.authentication.exception.HttpBasicException;
 import org.rootservices.authorization.http.response.Error;
 import org.springframework.context.ApplicationContext;
 

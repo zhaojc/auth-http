@@ -1,4 +1,4 @@
-package org.rootservices.authorization.http.authentication.exception;
+package org.rootservices.otter.authentication.exception;
 
 /**
  * Created by tommackenzie on 6/4/15.

@@ -8,8 +8,8 @@ import org.rootservices.authorization.grant.code.protocol.authorization.response
 import org.rootservices.authorization.authenticate.exception.UnauthorizedException;
 import org.rootservices.authorization.grant.code.exception.InformClientException;
 import org.rootservices.authorization.grant.code.exception.InformResourceOwnerException;
-import org.rootservices.authorization.http.QueryStringToMap;
-import org.rootservices.authorization.http.QueryStringToMapImpl;
+import org.rootservices.otter.QueryStringToMap;
+import org.rootservices.otter.QueryStringToMapImpl;
 import org.rootservices.authorization.http.presenter.AuthorizationPresenter;
 import org.springframework.context.ApplicationContext;
 
@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 /**
@@ -65,6 +66,8 @@ public class AuthorizationServlet extends HttpServlet {
         }
 
         AuthorizationPresenter presenter = new AuthorizationPresenter();
+        presenter.setEncodedCsrfToken(getEncodedCsrfToken(req));
+
         req.setAttribute("presenter", presenter);
         req.getRequestDispatcher("/WEB-INF/jsp/authorization.jsp").forward(req, resp);
         return;
@@ -96,6 +99,7 @@ public class AuthorizationServlet extends HttpServlet {
 
             AuthorizationPresenter presenter = new AuthorizationPresenter();
             presenter.setEmail(input.getUserName());
+            presenter.setEncodedCsrfToken(getEncodedCsrfToken(req));
 
             req.setAttribute("presenter", presenter);
             req.getRequestDispatcher("/WEB-INF/jsp/authorization.jsp").forward(req, resp);
@@ -122,5 +126,11 @@ public class AuthorizationServlet extends HttpServlet {
 
         resp.sendRedirect(location);
         return;
+    }
+
+    private String getEncodedCsrfToken(HttpServletRequest request) throws UnsupportedEncodingException {
+        String csrfToken = (String) request.getSession().getAttribute("csrfToken");
+        byte[] bytes = csrfToken.getBytes("UTF-8");
+        return Base64.getEncoder().encodeToString(bytes);
     }
 }

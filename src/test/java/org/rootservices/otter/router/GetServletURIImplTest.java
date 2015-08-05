@@ -1,10 +1,12 @@
-package org.rootservices.authorization.http;
+package org.rootservices.otter.router;
 
 import helpers.category.UnitTests;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.rootservices.authorization.http.controller.AuthorizationServlet;
+import org.rootservices.otter.router.GetServletURI;
+import org.rootservices.otter.router.GetServletURIImpl;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 

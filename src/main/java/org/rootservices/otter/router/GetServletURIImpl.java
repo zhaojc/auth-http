@@ -1,6 +1,4 @@
-package org.rootservices.authorization.http;
-
-import org.rootservices.authorization.http.controller.AuthorizationServlet;
+package org.rootservices.otter.router;
 
 import javax.servlet.annotation.WebServlet;
 

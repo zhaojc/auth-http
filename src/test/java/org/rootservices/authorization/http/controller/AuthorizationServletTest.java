@@ -4,23 +4,23 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Param;
 import helpers.category.ServletContainer;
 import helpers.fixture.FormFactory;
-import helpers.fixture.persistence.FactoryForPersistence;
-import helpers.fixture.persistence.LoadConfidentialClientWithScopes;
-import helpers.fixture.persistence.LoadResourceOwner;
+import helpers.fixture.persistence.*;
 import helpers.suite.IntegrationTestSuite;
 
 
 import com.ning.http.client.Response;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.rootservices.authorization.http.GetServletURI;
-import org.rootservices.authorization.http.GetServletURIImpl;
-import org.rootservices.authorization.http.QueryStringToMap;
-import org.rootservices.authorization.http.QueryStringToMapImpl;
+import org.rootservices.otter.router.GetServletURI;
+import org.rootservices.otter.router.GetServletURIImpl;
+import org.rootservices.otter.QueryStringToMap;
+import org.rootservices.otter.QueryStringToMapImpl;
 import org.rootservices.authorization.persistence.entity.*;
-import org.rootservices.authorization.security.RandomString;
 
+
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static org.fest.assertions.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by tommackenzie on 4/1/15.
@@ -36,8 +37,8 @@ import static org.fest.assertions.api.Assertions.assertThat;
 public class AuthorizationServletTest {
 
     private static LoadConfidentialClientWithScopes loadConfidentialClientWithScopes;
-    private static RandomString randomString;
     private static LoadResourceOwner loadResourceOwner;
+    private static GetSessionAndCsrfToken getSessionAndCsrfToken;
 
     protected static Class ServletClass = AuthorizationServlet.class;
     protected static String baseURI = String.valueOf(IntegrationTestSuite.getServer().getURI());
@@ -52,6 +53,7 @@ public class AuthorizationServletTest {
 
         loadConfidentialClientWithScopes = factoryForPersistence.makeLoadConfidentialClientWithScopes();
         loadResourceOwner = factoryForPersistence.makeLoadResourceOwner();
+        getSessionAndCsrfToken = factoryForPersistence.makeGetSessionAndCsrfToken();
 
         GetServletURI getServletURI = new GetServletURIImpl();
         servletURI = getServletURI.run(baseURI, ServletClass);
@@ -90,10 +92,13 @@ public class AuthorizationServletTest {
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
         Response response = f.get();
         assertThat(response.getStatusCode()).isEqualTo(200);
+
+        Optional<String> csrfToken = getSessionAndCsrfToken.extractCsrfToken(response.getResponseBody());
+        assertTrue(csrfToken.isPresent());
     }
 
     @Test
-    public void testGetExpect200RedirectUri() throws Exception {
+    public void testGetWithRedirectUriExpect200() throws Exception {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
         String servletURI = this.servletURI +
@@ -107,14 +112,15 @@ public class AuthorizationServletTest {
     }
 
     @Test
-    public void testPostExpect403() throws URISyntaxException, ExecutionException, InterruptedException {
+    public void testPostWhenNoSessionAndWrongCsrfTokenExpectCsrfFailureAnd403() throws URISyntaxException, ExecutionException, InterruptedException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        ResourceOwner ro = loadResourceOwner.run();
 
         String servletURI = this.servletURI +
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
-        List<Param> postData = FormFactory.makeLoginForm("test@rootservices.org");
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), "foo");
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
@@ -122,17 +128,74 @@ public class AuthorizationServletTest {
                 .execute();
 
         Response response = f.get();
+
         assertThat(response.getStatusCode()).isEqualTo(403);
     }
 
     @Test
-    public void testPostExpect404() throws Exception {
+    public void testPostWhenWrongCsrfTokenExpectCsrfFailureAnd403() throws URISyntaxException, ExecutionException, InterruptedException, IOException {
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        ResourceOwner ro = loadResourceOwner.run();
 
-        List<Param> postData = FormFactory.makeLoginForm("test@rootservices.org");
+        String servletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+
+        Session session = getSessionAndCsrfToken.run(servletURI);
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), "foo");
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
                 .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(403);
+    }
+
+
+    @Test
+    public void testPostWhenResourceOwnerFailsAuthenticationExpect403() throws URISyntaxException, ExecutionException, InterruptedException, IOException {
+
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+
+        String servletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+
+        Session session = getSessionAndCsrfToken.run(servletURI);
+        List<Param> postData = FormFactory.makeLoginForm("unknown-user@rootservices.org", session.getCsrfToken());
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
+                .execute();
+
+        Response response = f.get();
+        assertThat(response.getStatusCode()).isEqualTo(403);
+    }
+
+    @Test
+    public void testPostWithMissingParamsExpect404() throws Exception {
+
+        // get a session and valid csrf.
+        ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+        String serletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+        Session session = getSessionAndCsrfToken.run(serletURI);
+
+        ResourceOwner ro = loadResourceOwner.run();
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), session.getCsrfToken());
+
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
                 .execute();
 
         Response response = f.get();
@@ -141,7 +204,18 @@ public class AuthorizationServletTest {
 
     @Test
     public void testPostWithWrongResponseTypeExpect302() throws Exception {
+
+        // get a session and valid csrf.
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
+
+        String validServletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+        Session session = getSessionAndCsrfToken.run(validServletURI);
+
+        ResourceOwner ro = loadResourceOwner.run();
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), session.getCsrfToken());
+
         String expectedLocation = confidentialClient.getClient().getRedirectURI()
                 + "?error=unauthorized_client";
 
@@ -149,11 +223,11 @@ public class AuthorizationServletTest {
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=token";
 
-        List<Param> postData = FormFactory.makeLoginForm("test@rootservices.org");
-
+        // make request with wrong response type.
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
                 .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
                 .execute();
 
         Response response = f.get();
@@ -173,11 +247,13 @@ public class AuthorizationServletTest {
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
-        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail());
+        Session session = getSessionAndCsrfToken.run(servletURI);
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), session.getCsrfToken());
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
                 .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
                 .execute();
 
         Response response = f.get();
@@ -205,8 +281,6 @@ public class AuthorizationServletTest {
     public void testPostWithStateExpectAuthCode() throws Exception {
 
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
-
-        ResourceOwner ro = loadResourceOwner.run();
         String state = "test-state";
 
         String servletURI = this.servletURI +
@@ -214,11 +288,14 @@ public class AuthorizationServletTest {
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
                 "&state=" + state;
 
-        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail());
+        Session session = getSessionAndCsrfToken.run(servletURI);
+        ResourceOwner ro = loadResourceOwner.run();
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), session.getCsrfToken());
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
                 .preparePost(servletURI)
                 .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
                 .execute();
 
         Response response = f.get();
