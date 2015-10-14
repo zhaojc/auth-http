@@ -1,6 +1,6 @@
 package org.rootservices.authorization.http.controller;
 
-import org.rootservices.authorization.grant.code.protocol.authorization.ValidateParams;
+import org.rootservices.authorization.grant.code.protocol.authorization.request.ValidateParams;
 import org.rootservices.authorization.grant.code.protocol.authorization.exception.AuthCodeInsertException;
 import org.rootservices.authorization.grant.code.protocol.authorization.response.AuthCodeInput;
 import org.rootservices.authorization.grant.code.protocol.authorization.response.AuthResponse;
@@ -8,6 +8,7 @@ import org.rootservices.authorization.grant.code.protocol.authorization.response
 import org.rootservices.authorization.authenticate.exception.UnauthorizedException;
 import org.rootservices.authorization.grant.code.exception.InformClientException;
 import org.rootservices.authorization.grant.code.exception.InformResourceOwnerException;
+import org.rootservices.authorization.grant.openid.protocol.authorization.request.ValidateOpenIdParams;
 import org.rootservices.otter.QueryStringToMap;
 import org.rootservices.otter.QueryStringToMapImpl;
 import org.rootservices.authorization.http.presenter.AuthorizationPresenter;
@@ -28,8 +29,18 @@ import java.util.*;
 @WebServlet(value="/authorization", name="authorizationServlet")
 public class AuthorizationServlet extends HttpServlet {
 
+    private static String CLIENT_ID = "client_id";
+    private static String RESPONSE_TYPE = "response_type";
+    private static String REDIRECT_URI = "redirect_uri";
+    private static String SCOPE = "scope";
+    private static String STATE = "state";
+    private static String EMAIL = "email";
+    private static String PASSWORD = "password";
+    private static String CSRF_TOKEN = "csrfToken";
+
     private QueryStringToMap queryStringToMap;
     private ValidateParams validateParams;
+    private ValidateOpenIdParams validateOpenIdParams;
     private RequestAuthCode requestAuthCode;
 
     public AuthorizationServlet() {}
@@ -40,6 +51,7 @@ public class AuthorizationServlet extends HttpServlet {
         this.queryStringToMap = new QueryStringToMapImpl();
         this.validateParams = context.getBean(ValidateParams.class);
         this.requestAuthCode = context.getBean(RequestAuthCode.class);
+        this.validateOpenIdParams = context.getBean(ValidateOpenIdParams.class);
     }
 
     @Override
@@ -48,13 +60,23 @@ public class AuthorizationServlet extends HttpServlet {
         Map<String, List<String>> parameters = queryStringToMap.run(queryString);
 
         try {
-            validateParams.run(
-                    parameters.get("client_id"),
-                    parameters.get("response_type"),
-                    parameters.get("redirect_uri"),
-                    parameters.get("scope"),
-                    parameters.get("state")
-            );
+            if ( isRequestOpenId(parameters.get(SCOPE)) ) {
+                validateOpenIdParams.run(
+                        parameters.get(CLIENT_ID),
+                        parameters.get(RESPONSE_TYPE),
+                        parameters.get(REDIRECT_URI),
+                        parameters.get(SCOPE),
+                        parameters.get(STATE)
+                );
+            } else {
+                validateParams.run(
+                        parameters.get(CLIENT_ID),
+                        parameters.get(RESPONSE_TYPE),
+                        parameters.get(REDIRECT_URI),
+                        parameters.get(SCOPE),
+                        parameters.get(STATE)
+                );
+            }
         } catch (InformResourceOwnerException e) {
             req.getRequestDispatcher("notFoundServlet").forward(req, resp);
             return;
@@ -73,6 +95,10 @@ public class AuthorizationServlet extends HttpServlet {
         return;
     }
 
+    private boolean isRequestOpenId(List<String> scopes) {
+        return scopes != null && scopes.contains("openid");
+    }
+
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Optional<String> queryString = Optional.ofNullable(req.getQueryString());
@@ -81,15 +107,15 @@ public class AuthorizationServlet extends HttpServlet {
         AuthCodeInput input = new AuthCodeInput();
 
         // url parameters
-        input.setClientIds(parameters.get("client_id"));
-        input.setRedirectUris(parameters.get("redirect_uri"));
-        input.setResponseTypes(parameters.get("response_type"));
-        input.setScopes(parameters.get("scope"));
-        input.setStates(parameters.get("state"));
+        input.setClientIds(parameters.get(CLIENT_ID));
+        input.setRedirectUris(parameters.get(REDIRECT_URI));
+        input.setResponseTypes(parameters.get(RESPONSE_TYPE));
+        input.setScopes(parameters.get(SCOPE));
+        input.setStates(parameters.get(STATE));
 
         // post data
-        input.setUserName(req.getParameter("email"));
-        input.setPlainTextPassword(req.getParameter("password"));
+        input.setUserName(req.getParameter(EMAIL));
+        input.setPlainTextPassword(req.getParameter(PASSWORD));
 
         AuthResponse authResponse = null;
         try {
@@ -129,7 +155,7 @@ public class AuthorizationServlet extends HttpServlet {
     }
 
     private String getEncodedCsrfToken(HttpServletRequest request) throws UnsupportedEncodingException {
-        String csrfToken = (String) request.getSession().getAttribute("csrfToken");
+        String csrfToken = (String) request.getSession().getAttribute(CSRF_TOKEN);
         byte[] bytes = csrfToken.getBytes("UTF-8");
         return Base64.getEncoder().encodeToString(bytes);
     }

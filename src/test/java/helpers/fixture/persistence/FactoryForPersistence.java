@@ -17,17 +17,38 @@ public class FactoryForPersistence {
         this.context = context;
     }
 
+    public ClientRepository makeClientRepository() {
+        return IntegrationTestSuite.getContext().getBean(ClientRepository.class);
+    }
+
+    public ConfidentialClientRepository makeConfidentialClientRepository() {
+        return IntegrationTestSuite.getContext().getBean(ConfidentialClientRepository.class);
+    }
+
+    public ScopeRepository makeScopeRepository() {
+        return IntegrationTestSuite.getContext().getBean(ScopeRepository.class);
+    }
+
+    public ClientScopesRepository makeClientScopesRepository() {
+        return IntegrationTestSuite.getContext().getBean(ClientScopesRepository.class);
+    }
+
     public LoadConfidentialClientWithScopes makeLoadConfidentialClientWithScopes() {
-        ClientRepository clientRepository = IntegrationTestSuite.getContext().getBean(ClientRepository.class);
-        ConfidentialClientRepository confidentialClientRepository = confidentialClientRepository = IntegrationTestSuite.getContext().getBean(ConfidentialClientRepository.class);
-        ScopeRepository scopeRepository = scopeRepository = IntegrationTestSuite.getContext().getBean(ScopeRepository.class);
-        ClientScopesRepository clientScopesRepository = clientScopesRepository = IntegrationTestSuite.getContext().getBean(ClientScopesRepository.class);
-
-        LoadConfidentialClientWithScopes loadConfidentialClientWithScopes = new LoadConfidentialClientWithScopes(
-                clientRepository, scopeRepository, clientScopesRepository, confidentialClientRepository
+        return new LoadConfidentialClientWithScopes(
+                makeClientRepository(),
+                makeScopeRepository(),
+                makeClientScopesRepository(),
+                makeConfidentialClientRepository()
         );
+    }
 
-        return loadConfidentialClientWithScopes;
+    public LoadOpenIdConfidentialClientWithScopes makeLoadOpenIdConfidentialClientWithScopes() {
+        return new LoadOpenIdConfidentialClientWithScopes(
+                makeClientRepository(),
+                makeScopeRepository(),
+                makeClientScopesRepository(),
+                makeConfidentialClientRepository()
+        );
     }
 
     public LoadResourceOwner makeLoadResourceOwner() {

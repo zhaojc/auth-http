@@ -37,6 +37,7 @@ import static org.junit.Assert.assertTrue;
 public class AuthorizationServletTest {
 
     private static LoadConfidentialClientWithScopes loadConfidentialClientWithScopes;
+    private static LoadOpenIdConfidentialClientWithScopes loadOpenIdConfidentialClientWithScopes;
     private static LoadResourceOwner loadResourceOwner;
     private static GetSessionAndCsrfToken getSessionAndCsrfToken;
 
@@ -52,6 +53,7 @@ public class AuthorizationServletTest {
         );
 
         loadConfidentialClientWithScopes = factoryForPersistence.makeLoadConfidentialClientWithScopes();
+        loadOpenIdConfidentialClientWithScopes = factoryForPersistence.makeLoadOpenIdConfidentialClientWithScopes();
         loadResourceOwner = factoryForPersistence.makeLoadResourceOwner();
         getSessionAndCsrfToken = factoryForPersistence.makeGetSessionAndCsrfToken();
 
@@ -88,6 +90,24 @@ public class AuthorizationServletTest {
         String servletURI = this.servletURI +
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
+        Response response = f.get();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+
+        Optional<String> csrfToken = getSessionAndCsrfToken.extractCsrfToken(response.getResponseBody());
+        assertTrue(csrfToken.isPresent());
+    }
+
+    @Test
+    public void testGetOpenIdExpect200() throws Exception {
+        ConfidentialClient confidentialClient = loadOpenIdConfidentialClientWithScopes.run();
+
+        String servletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
+                "&redirect_uri=" + URLEncoder.encode(confidentialClient.getClient().getRedirectURI().toString(), "UTF-8") +
+                "&scope=openid";
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient().prepareGet(servletURI).execute();
         Response response = f.get();
