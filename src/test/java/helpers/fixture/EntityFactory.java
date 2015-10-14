@@ -35,16 +35,27 @@ public class EntityFactory {
         URI redirectUri = new URI("https://rootservices.org");
 
         Client client = new Client(uuid, rt, redirectUri);
-        List<Scope> scopes = makeScopes();
+        List<Scope> scopes = makeScopes("profile");
         client.setScopes(scopes);
         return client;
     }
 
-    public static List<Scope> makeScopes() {
+    public static Client makeOpenIdClientWithScopes() throws URISyntaxException {
+        UUID uuid = UUID.randomUUID();
+        ResponseType rt = ResponseType.CODE;
+        URI redirectUri = new URI("https://rootservices.org");
+
+        Client client = new Client(uuid, rt, redirectUri);
+        List<Scope> scopes = makeScopes("openid");
+        client.setScopes(scopes);
+        return client;
+    }
+
+    public static List<Scope> makeScopes(String scopeName) {
         List<Scope> scopes = new ArrayList<>();
         Scope scope = new Scope();
         scope.setUuid(UUID.randomUUID());
-        scope.setName("profile");
+        scope.setName(scopeName);
         scopes.add(scope);
         return scopes;
     }
