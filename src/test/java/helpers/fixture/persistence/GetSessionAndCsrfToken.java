@@ -4,9 +4,11 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
+import helpers.fixture.exception.GetCsrfException;
 
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -24,12 +26,20 @@ public class GetSessionAndCsrfToken {
         p = Pattern.compile(".*\"csrfToken\" value=\"([^\"]*)\".*", Pattern.DOTALL);
     }
 
-    public Session run(String uri) throws IOException, ExecutionException, InterruptedException {
+    public Session run(String uri) throws IOException, ExecutionException, InterruptedException, GetCsrfException {
         ListenableFuture<Response> f = httpDriver
                 .prepareGet(uri)
                 .execute();
 
         Response response = f.get();
+
+        if ( response.getStatusCode() != 200 ) {
+            throw new GetCsrfException(
+                    "getting csrf failed",
+                    response.getStatusCode(),
+                    URI.create(response.getHeader("location")),
+                    response.getResponseBody());
+        }
 
         Session session = new Session();
         for(Cookie cookie: response.getCookies()) {

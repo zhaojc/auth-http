@@ -8,6 +8,7 @@ import org.rootservices.authorization.grant.code.protocol.authorization.response
 import org.rootservices.authorization.authenticate.exception.UnauthorizedException;
 import org.rootservices.authorization.grant.code.exception.InformClientException;
 import org.rootservices.authorization.grant.code.exception.InformResourceOwnerException;
+import org.rootservices.authorization.grant.code.protocol.authorization.response.RequestAuthCodeImpl;
 import org.rootservices.authorization.grant.openid.protocol.authorization.request.ValidateOpenIdParams;
 import org.rootservices.otter.QueryStringToMap;
 import org.rootservices.otter.QueryStringToMapImpl;
@@ -42,6 +43,7 @@ public class AuthorizationServlet extends HttpServlet {
     private ValidateParams validateParams;
     private ValidateOpenIdParams validateOpenIdParams;
     private RequestAuthCode requestAuthCode;
+    private RequestAuthCode requestOpenIdAuthCode;
 
     public AuthorizationServlet() {}
 
@@ -50,7 +52,8 @@ public class AuthorizationServlet extends HttpServlet {
         ApplicationContext context = (ApplicationContext) getServletContext().getAttribute("factory");
         this.queryStringToMap = new QueryStringToMapImpl();
         this.validateParams = context.getBean(ValidateParams.class);
-        this.requestAuthCode = context.getBean(RequestAuthCode.class);
+        this.requestAuthCode = context.getBean("requestAuthCodeImpl", RequestAuthCode.class);
+        this.requestOpenIdAuthCode = context.getBean("requestOpenIdAuthCodeImpl", RequestAuthCode.class);
         this.validateOpenIdParams = context.getBean(ValidateOpenIdParams.class);
     }
 
@@ -119,7 +122,11 @@ public class AuthorizationServlet extends HttpServlet {
 
         AuthResponse authResponse = null;
         try {
-            authResponse = requestAuthCode.run(input);
+            if (isRequestOpenId(parameters.get(SCOPE)) ) {
+                authResponse = requestOpenIdAuthCode.run(input);
+            } else {
+                authResponse = requestAuthCode.run(input);
+            }
         } catch (UnauthorizedException e) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
 

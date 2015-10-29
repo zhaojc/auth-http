@@ -4,6 +4,7 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Param;
 import helpers.category.ServletContainer;
 import helpers.fixture.FormFactory;
+import helpers.fixture.exception.GetCsrfException;
 import helpers.fixture.persistence.*;
 import helpers.suite.IntegrationTestSuite;
 
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Created by tommackenzie on 4/1/15.
@@ -118,6 +120,53 @@ public class AuthorizationServletTest {
     }
 
     @Test
+    public void testPostOpenIdExpect200() throws Exception {
+        ConfidentialClient confidentialClient = loadOpenIdConfidentialClientWithScopes.run();
+
+        ResourceOwner ro = loadResourceOwner.run();
+
+        String servletURI = this.servletURI +
+                "?client_id=" + confidentialClient.getClient().getUuid().toString() +
+                "&response_type=" + confidentialClient.getClient().getResponseType().toString() +
+                "&redirect_uri=" + URLEncoder.encode(confidentialClient.getClient().getRedirectURI().toString(), "UTF-8") +
+                "&scope=openid";
+
+        Session session = new Session();
+        try {
+            session = getSessionAndCsrfToken.run(servletURI);
+        } catch (GetCsrfException e) {
+            fail("CSRF error - status code: " + e.getStatusCode() + ", redirect location: " + e.getRedirectUri() + "response body: " + e.getResponseBody());
+        }
+        List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), session.getCsrfToken());
+
+        ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
+                .preparePost(servletURI)
+                .setFormParams(postData)
+                .setCookies(Arrays.asList(session.getSession()))
+                .execute();
+
+        Response response = f.get();
+
+        assertThat(response.getStatusCode()).isEqualTo(302);
+
+        // location scheme, host, and path
+        URI location = new URI(response.getHeader("location"));
+        assertThat(location.getScheme()).isEqualTo(confidentialClient.getClient().getRedirectURI().getScheme());
+        assertThat(location.getHost()).isEqualTo(confidentialClient.getClient().getRedirectURI().getHost());
+        assertThat(location.getPath()).isEqualTo(confidentialClient.getClient().getRedirectURI().getPath());
+
+        //authorization code.
+        QueryStringToMap queryStringToMap = new QueryStringToMapImpl();
+        Map<String, List<String>> params = queryStringToMap.run(
+                Optional.of(location.getQuery())
+        );
+
+        assertThat(params.size()).isEqualTo(1);
+        assertThat(params.get("code").size()).isEqualTo(1);
+        assertThat(params.get("code").get(0)).isNotNull();
+    }
+
+    @Test
     public void testGetWithRedirectUriExpect200() throws Exception {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
@@ -161,7 +210,13 @@ public class AuthorizationServletTest {
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
-        Session session = getSessionAndCsrfToken.run(servletURI);
+        Session session = new Session();
+        try {
+            session = getSessionAndCsrfToken.run(servletURI);
+        } catch (GetCsrfException e) {
+            fail("CSRF error - status code: " + e.getStatusCode() + ", redirect location: " + e.getRedirectUri() + "response body: " + e.getResponseBody());
+        }
+
         List<Param> postData = FormFactory.makeLoginForm(ro.getEmail(), "foo");
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()
@@ -185,7 +240,13 @@ public class AuthorizationServletTest {
                 "?client_id=" + confidentialClient.getClient().getUuid().toString() +
                 "&response_type=" + confidentialClient.getClient().getResponseType().toString();
 
-        Session session = getSessionAndCsrfToken.run(servletURI);
+        Session session = new Session();
+        try {
+            session = getSessionAndCsrfToken.run(servletURI);
+        } catch (GetCsrfException e) {
+            fail("CSRF error - status code: " + e.getStatusCode() + ", redirect location: " + e.getRedirectUri() + "response body: " + e.getResponseBody());
+        }
+
         List<Param> postData = FormFactory.makeLoginForm("unknown-user@rootservices.org", session.getCsrfToken());
 
         ListenableFuture<Response> f = IntegrationTestSuite.getHttpClient()

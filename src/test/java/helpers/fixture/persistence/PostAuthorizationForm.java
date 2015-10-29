@@ -5,6 +5,7 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Param;
 import com.ning.http.client.Response;
 import helpers.fixture.FormFactory;
+import helpers.fixture.exception.GetCsrfException;
 import org.rootservices.otter.QueryStringToMap;
 import org.rootservices.otter.QueryStringToMapImpl;
 import org.rootservices.authorization.persistence.entity.ConfidentialClient;
@@ -35,7 +36,7 @@ public class PostAuthorizationForm {
         this.getSessionAndCsrfToken = getSessionAndCsrfToken;
     }
 
-    public String run(ConfidentialClient confidentialClient, String baseURI) throws IOException, ExecutionException, InterruptedException, URISyntaxException {
+    public String run(ConfidentialClient confidentialClient, String baseURI) throws IOException, ExecutionException, InterruptedException, URISyntaxException, GetCsrfException {
         ResourceOwner ro = loadResourceOwner.run();
 
         String servletURI = baseURI +
