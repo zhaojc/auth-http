@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import helpers.category.ServletContainer;
+import helpers.fixture.exception.GetCsrfException;
 import helpers.fixture.persistence.*;
 import helpers.suite.IntegrationTestSuite;
 import org.junit.BeforeClass;
@@ -55,7 +56,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenExpect200() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+    public void testGetTokenExpect200() throws URISyntaxException, InterruptedException, ExecutionException, IOException, GetCsrfException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
         String authorizationCode = postAuthorizationForm.run(confidentialClient, authServletURI);
 
@@ -95,7 +96,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenCodeIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+    public void testGetTokenCodeIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException, GetCsrfException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
         String authorizationCode = postAuthorizationForm.run(confidentialClient, authServletURI);
 
@@ -132,7 +133,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenRedirectUriIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+    public void testGetTokenRedirectUriIsMissingExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException, GetCsrfException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
         String authorizationCode = postAuthorizationForm.run(confidentialClient, authServletURI);
 
@@ -194,7 +195,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenAuthenticationFailsWrongPasswordExpect401() throws ExecutionException, InterruptedException, IOException, URISyntaxException {
+    public void testGetTokenAuthenticationFailsWrongPasswordExpect401() throws ExecutionException, InterruptedException, IOException, URISyntaxException, GetCsrfException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
         String authorizationCode = postAuthorizationForm.run(confidentialClient, authServletURI);
 
@@ -267,7 +268,7 @@ public class TokenServletTest {
     }
 
     @Test
-    public void testGetTokenCodeIsCompromisedExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException {
+    public void testGetTokenCodeIsCompromisedExpect400() throws URISyntaxException, InterruptedException, ExecutionException, IOException, GetCsrfException {
         ConfidentialClient confidentialClient = loadConfidentialClientWithScopes.run();
 
         // generate a token with a auth code.
